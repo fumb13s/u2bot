@@ -91,6 +91,14 @@ function header(text) {
   console.log(line);
 }
 
+function isRealValue(val) {
+  return typeof val === "string" && val.length > 0 && !val.includes("YOUR_") && !val.includes("_HERE");
+}
+
+function defaultHint(val) {
+  return isRealValue(val) ? ` [${val}]` : "";
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -113,23 +121,26 @@ async function main() {
     console.log();
   }
 
-  // 3. Load example config as template
-  const config = JSON.parse(fs.readFileSync(EXAMPLE_PATH, "utf8"));
+  // 3. Load existing config if present, otherwise use example as template
+  let existing = null;
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+    } catch {
+      // ignore parse errors — fall back to example
+    }
+  }
+  const config = existing
+    ? JSON.parse(JSON.stringify(existing))
+    : JSON.parse(fs.readFileSync(EXAMPLE_PATH, "utf8"));
 
   const rl = createInterface();
 
-  // 4. Check for existing config.json
-  if (fs.existsSync(CONFIG_PATH)) {
-    const answer = await ask(
-      rl,
-      "config.json already exists. Overwrite? (y/N): "
+  if (existing) {
+    console.log(
+      "Existing config.json found — current values shown as defaults.\n" +
+        "Press Enter to keep a value, or type a new one to replace it."
     );
-    if (answer.trim().toLowerCase() !== "y") {
-      console.log("Setup cancelled — existing config.json kept.");
-      rl.close();
-      return;
-    }
-    console.log();
   }
 
   // ── Required values ──────────────────────────────────────────────────────
@@ -140,9 +151,14 @@ async function main() {
   2. Create a new application (or select an existing one)
   3. Go to Bot → click "Reset Token" → copy the token
 `);
+  const hasToken = isRealValue(existing?.discord?.token);
+  const tokenHint = hasToken ? " [Enter to keep existing]" : "";
   let token = "";
   while (!token) {
-    token = (await askMasked(rl, "  Bot token: ")).trim();
+    token = (await askMasked(rl, `  Bot token${tokenHint}: `)).trim();
+    if (!token && hasToken) {
+      token = existing.discord.token;
+    }
     if (!token) console.log("  Token cannot be empty.");
   }
   config.discord.token = token;
@@ -153,9 +169,11 @@ async function main() {
   Find it at: https://www.youtube.com/account_advanced
   Or from the channel URL: youtube.com/channel/UC...
 `);
+  const ytDefault = existing?.youtube?.channelId;
   let ytChannel = "";
   while (!ytChannel) {
-    ytChannel = (await ask(rl, "  YouTube channel ID: ")).trim();
+    ytChannel = (await ask(rl, `  YouTube channel ID${defaultHint(ytDefault)}: `)).trim();
+    if (!ytChannel && isRealValue(ytDefault)) ytChannel = ytDefault;
     if (!ytChannel) console.log("  Channel ID cannot be empty.");
   }
   config.youtube.channelId = ytChannel;
@@ -168,9 +186,11 @@ async function main() {
   1. Open Discord Settings → Advanced → enable Developer Mode
   2. Right-click the target channel → "Copy Channel ID"
 `);
+  const videoDefault = existing?.discord?.videoChannelId;
   let videoChannelId = "";
   while (!videoChannelId) {
-    videoChannelId = (await ask(rl, "  Video channel ID: ")).trim();
+    videoChannelId = (await ask(rl, `  Video channel ID${defaultHint(videoDefault)}: `)).trim();
+    if (!videoChannelId && isRealValue(videoDefault)) videoChannelId = videoDefault;
     if (!videoChannelId) console.log("  Channel ID cannot be empty.");
   }
   config.discord.videoChannelId = videoChannelId;
@@ -179,45 +199,58 @@ async function main() {
   console.log(`
   This is the Discord channel where live-stream notifications are posted.
 `);
+  const liveDefault = existing?.discord?.liveChannelId;
+  const liveIsSameAsVideo = !isRealValue(liveDefault) || liveDefault === videoChannelId;
   const liveAnswer = await ask(
     rl,
-    `  Use the same channel as videos (${videoChannelId})? (Y/n): `
+    `  Use the same channel as videos (${videoChannelId})? (${liveIsSameAsVideo ? "Y/n" : "y/N"}): `
   );
-  if (liveAnswer.trim().toLowerCase() === "n") {
+  const useSame = liveIsSameAsVideo
+    ? liveAnswer.trim().toLowerCase() !== "n"
+    : liveAnswer.trim().toLowerCase() === "y";
+  if (useSame) {
+    config.discord.liveChannelId = videoChannelId;
+  } else {
     let liveChannelId = "";
     while (!liveChannelId) {
-      liveChannelId = (await ask(rl, "  Live channel ID: ")).trim();
+      liveChannelId = (await ask(rl, `  Live channel ID${defaultHint(liveDefault)}: `)).trim();
+      if (!liveChannelId && isRealValue(liveDefault)) liveChannelId = liveDefault;
       if (!liveChannelId) console.log("  Channel ID cannot be empty.");
     }
     config.discord.liveChannelId = liveChannelId;
-  } else {
-    config.discord.liveChannelId = videoChannelId;
   }
 
   // ── Optional values ──────────────────────────────────────────────────────
 
   header("Optional Settings (press Enter for defaults)");
 
+  const currentAutoPublish = existing?.discord?.autoPublish ?? true;
   const autoPublishAnswer = await ask(
     rl,
-    "  Auto-publish messages in announcement channels? (Y/n): "
+    `  Auto-publish messages in announcement channels? (${currentAutoPublish ? "Y/n" : "y/N"}): `
   );
-  config.discord.autoPublish =
-    autoPublishAnswer.trim().toLowerCase() !== "n";
+  if (autoPublishAnswer.trim() === "") {
+    config.discord.autoPublish = currentAutoPublish;
+  } else {
+    config.discord.autoPublish =
+      autoPublishAnswer.trim().toLowerCase() !== "n";
+  }
 
+  const currentRss = existing?.polling?.rssFeedIntervalMinutes ?? 3;
   const rssAnswer = await ask(
     rl,
-    "  RSS feed poll interval in minutes (default: 3): "
+    `  RSS feed poll interval in minutes (default: ${currentRss}): `
   );
   const rssInterval = parseInt(rssAnswer.trim(), 10);
-  if (rssInterval > 0) config.polling.rssFeedIntervalMinutes = rssInterval;
+  config.polling.rssFeedIntervalMinutes = rssInterval > 0 ? rssInterval : currentRss;
 
+  const currentLive = existing?.polling?.liveCheckIntervalMinutes ?? 2;
   const liveCheckAnswer = await ask(
     rl,
-    "  Live-stream check interval in minutes (default: 2): "
+    `  Live-stream check interval in minutes (default: ${currentLive}): `
   );
   const liveInterval = parseInt(liveCheckAnswer.trim(), 10);
-  if (liveInterval > 0) config.polling.liveCheckIntervalMinutes = liveInterval;
+  config.polling.liveCheckIntervalMinutes = liveInterval > 0 ? liveInterval : currentLive;
 
   // ── Write config ─────────────────────────────────────────────────────────
 
