@@ -3,17 +3,17 @@ const { fetchLiveStatus } = require('./liveChecker');
 const { sendVideoNotification, sendLiveNotification } = require('./discordNotifier');
 const config = require('./config');
 
-async function handleTestInteraction(interaction, client) {
+async function handleTestInteraction(interaction) {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === 'test_video') {
-    await handleTestVideo(interaction, client);
+    await handleTestVideo(interaction);
   } else if (interaction.commandName === 'test_live') {
-    await handleTestLive(interaction, client);
+    await handleTestLive(interaction);
   }
 }
 
-async function handleTestVideo(interaction, client) {
+async function handleTestVideo(interaction) {
   await interaction.deferReply({ ephemeral: true });
 
   try {
@@ -23,7 +23,7 @@ async function handleTestVideo(interaction, client) {
       return;
     }
 
-    const channel = await client.channels.fetch(config.discord.videoChannelId);
+    const channel = await interaction.client.channels.fetch(config.discord.videoChannelId);
     if (!channel) {
       await interaction.editReply(`Could not fetch Discord channel: ${config.discord.videoChannelId}`);
       return;
@@ -37,7 +37,7 @@ async function handleTestVideo(interaction, client) {
   }
 }
 
-async function handleTestLive(interaction, client) {
+async function handleTestLive(interaction) {
   await interaction.deferReply({ ephemeral: true });
 
   try {
@@ -52,7 +52,7 @@ async function handleTestLive(interaction, client) {
       return;
     }
 
-    const channel = await client.channels.fetch(config.discord.liveChannelId);
+    const channel = await interaction.client.channels.fetch(config.discord.liveChannelId);
     if (!channel) {
       await interaction.editReply(`Could not fetch Discord channel: ${config.discord.liveChannelId}`);
       return;
