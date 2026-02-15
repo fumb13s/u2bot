@@ -4,7 +4,8 @@
   "description": "YouTube to Discord notification bot — posts when new videos are uploaded or live streams start",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "setup": "node setup.js"
   },
   "engines": {
     "node": ">=18.0.0"
