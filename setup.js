@@ -259,8 +259,8 @@ async function main() {
   Use \\n for line breaks.
 `);
 
-  const defaultVideoContent = "🎬 **{author}** just uploaded a new video!\\n**{title}**\\n{url}";
-  const currentVideoContent = existing?.messages?.video?.content ?? defaultVideoContent;
+  const defaultVideoContent = "🎬 **{author}** just uploaded a new video!\n**{title}**\n{url}";
+  const currentVideoContent = (existing?.messages?.video?.content ?? defaultVideoContent).replace(/\\n/g, "\n");
   const videoContentDisplay = currentVideoContent.replace(/\n/g, "\\n");
   const videoContentAnswer = (await ask(rl, `  Video template [${videoContentDisplay}]: `)).trim();
   config.messages = config.messages ?? {};
@@ -269,8 +269,8 @@ async function main() {
     ? videoContentAnswer.replace(/\\n/g, "\n")
     : currentVideoContent;
 
-  const defaultLiveContent = "🔴 **{author}** is live right now!\\n**{title}**\\n{url}";
-  const currentLiveContent = existing?.messages?.live?.content ?? defaultLiveContent;
+  const defaultLiveContent = "🔴 **{author}** is live right now!\n**{title}**\n{url}";
+  const currentLiveContent = (existing?.messages?.live?.content ?? defaultLiveContent).replace(/\\n/g, "\n");
   const liveContentDisplay = currentLiveContent.replace(/\n/g, "\\n");
   const liveContentAnswer = (await ask(rl, `  Live template [${liveContentDisplay}]: `)).trim();
   config.messages.live = config.messages.live ?? {};
