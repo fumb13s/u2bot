@@ -259,7 +259,7 @@ async function main() {
   Use \\n for line breaks.
 `);
 
-  const defaultVideoContent = "🎬 **{author}** just uploaded a new video: **{title}**\\n{url}";
+  const defaultVideoContent = "🎬 **{author}** just uploaded a new video!\\n**{title}**\\n{url}";
   const currentVideoContent = existing?.messages?.video?.content ?? defaultVideoContent;
   const videoContentDisplay = currentVideoContent.replace(/\n/g, "\\n");
   const videoContentAnswer = (await ask(rl, `  Video template [${videoContentDisplay}]: `)).trim();
@@ -269,7 +269,7 @@ async function main() {
     ? videoContentAnswer.replace(/\\n/g, "\n")
     : currentVideoContent;
 
-  const defaultLiveContent = "🔴 **{author}** is live right now: **{title}**\\n{url}";
+  const defaultLiveContent = "🔴 **{author}** is live right now!\\n**{title}**\\n{url}";
   const currentLiveContent = existing?.messages?.live?.content ?? defaultLiveContent;
   const liveContentDisplay = currentLiveContent.replace(/\n/g, "\\n");
   const liveContentAnswer = (await ask(rl, `  Live template [${liveContentDisplay}]: `)).trim();

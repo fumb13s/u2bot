@@ -1,5 +1,6 @@
 function applyTemplate(str, vars) {
   return str
+    .replace(/\\n/g, '\n')
     .replace(/\{title\}/g, vars.title)
     .replace(/\{author\}/g, vars.author)
     .replace(/\{url\}/g, vars.url)
