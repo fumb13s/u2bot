@@ -30,8 +30,7 @@ async function sendVideoNotification(channel, videoData, config) {
   };
   const template = config.messages.video;
 
-  const text = template.content ? applyTemplate(template.content, vars) : '';
-  const content = text ? `${text}\n${videoData.url}` : videoData.url;
+  const content = template.content ? applyTemplate(template.content, vars) : videoData.url;
   const message = await channel.send({ content });
   console.log(`Sent video notification: ${videoData.title}`);
   await tryCrosspost(message, config);
@@ -46,8 +45,7 @@ async function sendLiveNotification(channel, streamData, config) {
   };
   const template = config.messages.live;
 
-  const text = template.content ? applyTemplate(template.content, vars) : '';
-  const content = text ? `${text}\n${streamData.url}` : streamData.url;
+  const content = template.content ? applyTemplate(template.content, vars) : streamData.url;
   const message = await channel.send({ content });
   console.log(`Sent live notification: ${streamData.title}`);
   await tryCrosspost(message, config);

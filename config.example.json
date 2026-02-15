@@ -15,10 +15,10 @@
   },
   "messages": {
     "video": {
-      "content": "🎬 **{author}** just uploaded a new video!\n**{title}**"
+      "content": "🎬 **{author}** just uploaded a new video: **{title}**\n{url}"
     },
     "live": {
-      "content": "🔴 **{author}** is live right now!\n**{title}**"
+      "content": "🔴 **{author}** is live right now: **{title}**\n{url}"
     }
   }
 }
