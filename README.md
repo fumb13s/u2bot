@@ -4,7 +4,7 @@ YouTube-to-Discord notification bot. Posts to Discord when a channel uploads a n
 
 ## Prerequisites
 
-- Node.js >= 18 (for local install) **or** Docker
+- Docker (recommended) **or** Node.js >= 18
 - A Discord bot token ([create one here](https://discord.com/developers/applications))
 - The YouTube channel ID you want to monitor (starts with `UC`)
 
@@ -12,7 +12,21 @@ YouTube-to-Discord notification bot. Posts to Discord when a channel uploads a n
 
 ```bash
 git clone <repo-url> && cd u2bot
-npm run setup   # interactive wizard — creates config.json
+cp config.example.json config.json  # edit with your values
+docker compose up -d
+```
+
+If you have Node.js installed, you can use the interactive setup wizard instead of editing the file by hand:
+
+```bash
+npm run setup                # creates config.json interactively
+docker compose up -d
+```
+
+### Running without Docker
+
+```bash
+npm run setup   # or: cp config.example.json config.json
 npm start
 ```
 
@@ -52,8 +66,9 @@ Message templates support `{title}`, `{url}`, and `{date}` placeholders.
 
 Recommended for shared/VPS environments. The container is capped at 128 MB RAM.
 
+Make sure `config.json` exists first (see [Configuration](#configuration)), then:
+
 ```bash
-npm run setup                # create config.json first
 docker compose up -d         # build image & start container
 docker compose logs -f       # tail logs
 docker compose down          # stop
