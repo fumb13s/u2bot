@@ -14,7 +14,10 @@ Install Docker (recommended):
 
 ```bash
 curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER   # allow your user to run docker
 ```
+
+Then run `newgrp docker` (or log out and back in) for the group change to take effect.
 
 Or install Node.js if running without Docker:
 
