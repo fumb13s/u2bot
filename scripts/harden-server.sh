@@ -6,6 +6,13 @@
 #
 set -uo pipefail
 
+VERSION="1.0.0"
+
+if [[ "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then
+    echo "harden-server.sh v$VERSION"
+    exit 0
+fi
+
 # ─── Colors / helpers ─────────────────────────────────────────────────────────
 
 RED='\033[0;31m'
@@ -39,6 +46,7 @@ load_var() { [[ -f "$STATE_DIR/var_$1" ]] && cat "$STATE_DIR/var_$1" || echo "";
 if [[ -f /etc/os-release ]]; then
     . /etc/os-release
     [[ "$ID" == "ubuntu" ]] || fatal "This script targets Ubuntu. Detected: $ID"
+    info "harden-server.sh v$VERSION"
     info "Detected $PRETTY_NAME"
 else
     fatal "/etc/os-release not found — cannot confirm Ubuntu."
@@ -53,12 +61,20 @@ echo "  - Installing fail2ban"
 echo "  - Enabling automatic security updates"
 echo "  - Applying kernel/network sysctl tweaks"
 echo ""
+PREV_VERSION="$(load_var version)"
 if step_done "complete"; then
-    info "All steps already completed. Nothing to do."
+    if [[ -n "$PREV_VERSION" && "$PREV_VERSION" != "$VERSION" ]]; then
+        warn "Server was hardened with v$PREV_VERSION (current: v$VERSION)."
+    else
+        info "All steps already completed. Nothing to do."
+    fi
     exit 0
 fi
 if ls "$STATE_DIR"/step_* &>/dev/null; then
     warn "Previous run detected — completed steps will be skipped."
+    if [[ -n "$PREV_VERSION" && "$PREV_VERSION" != "$VERSION" ]]; then
+        warn "Previous run was v$PREV_VERSION (current: v$VERSION)."
+    fi
 fi
 read -rp "Proceed? [y/N] " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || { info "Aborted."; exit 0; }
@@ -335,6 +351,7 @@ fi
 
 # ─── 10. Summary ─────────────────────────────────────────────────────────────
 
+save_var version "$VERSION"
 mark_done "complete"
 
 echo ""
