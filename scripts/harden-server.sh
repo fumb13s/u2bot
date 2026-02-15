@@ -170,6 +170,9 @@ EOF
     if ! systemctl restart ssh; then
         fatal "Failed to restart ssh. Re-run the script to retry."
     fi
+    if ! systemctl is-active --quiet ssh; then
+        fatal "ssh service is not running after restart. Re-run the script to retry."
+    fi
     info "ssh enabled and restarted with hardened config."
     mark_done "step_ssh"
 fi
