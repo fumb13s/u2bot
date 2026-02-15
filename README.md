@@ -11,7 +11,7 @@ YouTube-to-Discord notification bot. Posts to Discord when a channel uploads a n
 ## Quick Start
 
 ```bash
-git clone <repo-url> && cd u2bot
+git clone https://github.com/fumb13s/u2bot.git && cd u2bot
 cp config.example.json config.json  # edit with your values
 docker compose up -d
 ```
