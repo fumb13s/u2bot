@@ -1,0 +1,35 @@
+{
+  "discord": {
+    "token": "YOUR_BOT_TOKEN_HERE",
+    "videoChannelId": "DISCORD_CHANNEL_ID_FOR_VIDEOS",
+    "liveChannelId": "DISCORD_CHANNEL_ID_FOR_LIVE",
+    "autoPublish": true
+  },
+  "youtube": {
+    "channelId": "UC_YOUTUBE_CHANNEL_ID"
+  },
+  "polling": {
+    "rssFeedIntervalMinutes": 3,
+    "liveCheckIntervalMinutes": 2
+  },
+  "messages": {
+    "video": {
+      "content": "New video from the channel!",
+      "embed": {
+        "title": "{title}",
+        "url": "{url}",
+        "description": "A new video was published on {date}",
+        "color": 16711680
+      }
+    },
+    "live": {
+      "content": "The channel is live right now!",
+      "embed": {
+        "title": "{title}",
+        "url": "{url}",
+        "description": "Live stream started on {date}",
+        "color": 16729344
+      }
+    }
+  }
+}
