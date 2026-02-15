@@ -96,6 +96,7 @@ Message templates support `{title}`, `{url}`, and `{date}` placeholders.
    - `bot`
    - `applications.commands` (required for the `/status` slash command)
 3. In the **Bot Permissions** section that appears below, select:
+   - **View Channels**
    - **Send Messages**
    - **Embed Links**
    - **Manage Messages** (only needed if `autoPublish` is `true` and you use announcement channels)
@@ -104,7 +105,7 @@ Message templates support `{title}`, `{url}`, and `{date}` placeholders.
 
 If the bot was previously invited without the `applications.commands` scope, open the new URL and re-authorize — Discord will add the missing scope without removing the bot or its roles.
 
-The bot needs **Send Messages**, **Embed Links**, and (if using auto-publish) **Manage Messages** permissions specifically in the channels it posts to (`videoChannelId` and `liveChannelId`). If you don't want to grant these server-wide, you can set them per-channel: go to the channel's settings, open **Permissions**, add the bot's role, and enable the permissions there.
+The bot needs **View Channel**, **Send Messages**, **Embed Links**, and (if using auto-publish) **Manage Messages** permissions specifically in the channels it posts to (`videoChannelId` and `liveChannelId`). If you don't want to grant these server-wide, you can set them per-channel: go to the channel's settings, open **Permissions**, add the bot's role, and enable the permissions there.
 
 ### 3. Get channel IDs
 

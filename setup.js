@@ -261,9 +261,23 @@ async function main() {
 
   header("Next Steps");
   console.log(`
-  Start the bot:
+  1. Invite the bot to your server (if you haven't already):
 
-    npm start
+     Go to https://discord.com/developers/applications
+     → your app → OAuth2 → URL Generator
+     Select scopes: bot, applications.commands
+     Select permissions: Send Messages, Embed Links
+     Open the generated URL in your browser to add the bot.
+
+  2. Make sure the bot has access to the notification channels:
+
+     The bot needs "View Channel", "Send Messages", and "Embed Links"
+     permissions in each channel it posts to. If using announcement
+     channels with auto-publish, it also needs "Manage Messages".
+
+  3. Start the bot:
+
+     npm start
 
   The bot will begin polling the YouTube RSS feed and
   post notifications to your Discord channel(s). Enjoy!
