@@ -33,23 +33,17 @@ async function fetchLiveStatus(config) {
   const videoIdMatch = html.match(/(?:"videoId"\s*:\s*"|\/watch\?v=)([a-zA-Z0-9_-]{11})/);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
-  // Fetch the actual watch page to get a reliable video title — the /live
-  // channel page only has localized UI labels, not the stream title.
+  // Use YouTube's oEmbed API for a reliable video title — scraping the HTML
+  // is fragile (localized UI labels, consent walls, varying page structure).
   let title = 'Live Stream';
   if (videoId) {
     try {
-      const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-        headers: { 'User-Agent': `Mozilla/5.0 (compatible; u2bot/${version})` },
-      });
-      if (watchRes.ok) {
-        const watchHtml = await watchRes.text();
-        const titleMatch = watchHtml.match(/"videoDetails"\s*:\s*\{[\s\S]{0,500}?"title"\s*:\s*"([^"]+)"/)
-          || watchHtml.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/)
-          || watchHtml.match(/<title>([^<]+?)(?:\s*-\s*YouTube)?\s*<\/title>/);
-        if (titleMatch) {
-          title = titleMatch[1];
-          try { title = JSON.parse(`"${title}"`); } catch { /* keep raw */ }
-        }
+      const oembedRes = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      );
+      if (oembedRes.ok) {
+        const data = await oembedRes.json();
+        if (data.title) title = data.title;
       }
     } catch (err) {
       console.error('Failed to fetch video title:', err.message);
