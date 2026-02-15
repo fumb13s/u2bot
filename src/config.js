@@ -35,5 +35,6 @@ config.discord.autoPublish = config.discord.autoPublish ?? true;
 config.polling = config.polling ?? {};
 config.polling.rssFeedIntervalMinutes = config.polling.rssFeedIntervalMinutes ?? 3;
 config.polling.liveCheckIntervalMinutes = config.polling.liveCheckIntervalMinutes ?? 2;
+config.healthCheckPort = config.healthCheckPort ?? 3000;
 
 module.exports = config;

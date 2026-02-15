@@ -8,6 +8,7 @@
   "youtube": {
     "channelId": "UC_YOUTUBE_CHANNEL_ID"
   },
+  "healthCheckPort": 3000,
   "polling": {
     "rssFeedIntervalMinutes": 3,
     "liveCheckIntervalMinutes": 2

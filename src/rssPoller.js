@@ -1,5 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 const { sendVideoNotification } = require('./discordNotifier');
+const state = require('./botState');
 
 const parser = new XMLParser();
 const seenVideoIds = new Set();
@@ -13,11 +14,15 @@ async function pollRssFeed(client, config) {
     const res = await fetch(feedUrl);
     if (!res.ok) {
       console.error(`RSS fetch failed: ${res.status} ${res.statusText}`);
+      state.lastRssPollAt = new Date();
+      state.lastRssPollOk = false;
       return;
     }
     xml = await res.text();
   } catch (err) {
     console.error('RSS fetch error:', err.message);
+    state.lastRssPollAt = new Date();
+    state.lastRssPollOk = false;
     return;
   }
 
@@ -26,12 +31,16 @@ async function pollRssFeed(client, config) {
     parsed = parser.parse(xml);
   } catch (err) {
     console.error('RSS parse error:', err.message);
+    state.lastRssPollAt = new Date();
+    state.lastRssPollOk = false;
     return;
   }
 
   const entries = parsed?.feed?.entry;
   if (!entries) {
     console.log('RSS: No entries found in feed.');
+    state.lastRssPollAt = new Date();
+    state.lastRssPollOk = true;
     return;
   }
 
@@ -45,12 +54,17 @@ async function pollRssFeed(client, config) {
     }
     console.log(`RSS: First run — seeded ${seenVideoIds.size} existing video IDs.`);
     isFirstRun = false;
+    state.lastRssPollAt = new Date();
+    state.lastRssPollOk = true;
+    state.seenVideoCount = seenVideoIds.size;
     return;
   }
 
   const channel = await client.channels.fetch(config.discord.videoChannelId);
   if (!channel) {
     console.error(`Could not fetch Discord channel: ${config.discord.videoChannelId}`);
+    state.lastRssPollAt = new Date();
+    state.lastRssPollOk = false;
     return;
   }
 
@@ -75,6 +89,10 @@ async function pollRssFeed(client, config) {
       console.error(`Failed to send video notification for ${videoId}:`, err.message);
     }
   }
+
+  state.lastRssPollAt = new Date();
+  state.lastRssPollOk = true;
+  state.seenVideoCount = seenVideoIds.size;
 }
 
 function startRssPoller(client, config) {

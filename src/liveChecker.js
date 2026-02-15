@@ -1,5 +1,6 @@
 const { sendLiveNotification } = require('./discordNotifier');
 const { version } = require('../package.json');
+const state = require('./botState');
 
 let isCurrentlyLive = false;
 
@@ -13,11 +14,15 @@ async function checkLiveStatus(client, config) {
     });
     if (!res.ok) {
       console.error(`Live check fetch failed: ${res.status} ${res.statusText}`);
+      state.lastLiveCheckAt = new Date();
+      state.lastLiveCheckOk = false;
       return;
     }
     html = await res.text();
   } catch (err) {
     console.error('Live check fetch error:', err.message);
+    state.lastLiveCheckAt = new Date();
+    state.lastLiveCheckOk = false;
     return;
   }
 
@@ -52,6 +57,8 @@ async function checkLiveStatus(client, config) {
     const channel = await client.channels.fetch(config.discord.liveChannelId);
     if (!channel) {
       console.error(`Could not fetch Discord channel: ${config.discord.liveChannelId}`);
+      state.lastLiveCheckAt = new Date();
+      state.lastLiveCheckOk = false;
       return;
     }
 
@@ -64,6 +71,10 @@ async function checkLiveStatus(client, config) {
     isCurrentlyLive = false;
     console.log('Live stream has ended.');
   }
+
+  state.lastLiveCheckAt = new Date();
+  state.lastLiveCheckOk = true;
+  state.isCurrentlyLive = isCurrentlyLive;
 }
 
 function startLiveChecker(client, config) {

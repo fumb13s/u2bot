@@ -1,8 +1,11 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, Events, GatewayIntentBits } = require('discord.js');
 const { version } = require('../package.json');
 const config = require('./config');
+const state = require('./botState');
 const { startRssPoller } = require('./rssPoller');
 const { startLiveChecker } = require('./liveChecker');
+const { startHealthServer } = require('./healthCheck');
+const { registerCommands, handleStatusInteraction } = require('./statusCommand');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -11,11 +14,16 @@ const client = new Client({
 let rssInterval;
 let liveInterval;
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`u2bot v${version} — Logged in as ${client.user.tag}`);
+  state.startedAt = new Date();
   rssInterval = startRssPoller(client, config);
   liveInterval = startLiveChecker(client, config);
+  await registerCommands(client.user.id);
+  startHealthServer();
 });
+
+client.on(Events.InteractionCreate, handleStatusInteraction);
 
 function shutdown() {
   console.log('Shutting down...');
