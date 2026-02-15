@@ -133,6 +133,15 @@ else
     chmod 700 "$DEPLOY_SSH_DIR"
     chmod 600 "$DEPLOY_SSH_DIR/authorized_keys"
 
+    # SSH refuses keys if the home directory is group/other-writable
+    chmod 750 "$DEPLOY_HOME"
+    chown "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_HOME"
+
+    # Sanity check: authorized_keys must not be empty
+    if [[ ! -s "$DEPLOY_SSH_DIR/authorized_keys" ]]; then
+        fatal "authorized_keys is empty — cannot proceed without an SSH key."
+    fi
+
     # Verify sudo works for the new user
     if sudo -u "$DEPLOY_USER" sudo -n true 2>/dev/null; then
         info "Verified: '$DEPLOY_USER' can sudo."
