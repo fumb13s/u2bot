@@ -165,8 +165,12 @@ EOF
     if ! sshd -t; then
         fatal "sshd config test failed — not restarting. Fix /etc/ssh/sshd_config.d/hardening.conf and re-run."
     fi
-    systemctl restart sshd
-    info "sshd restarted with hardened config."
+    # Ubuntu uses 'ssh', not 'sshd'
+    systemctl enable ssh
+    if ! systemctl restart ssh; then
+        fatal "Failed to restart ssh. Re-run the script to retry."
+    fi
+    info "ssh enabled and restarted with hardened config."
     mark_done "step_ssh"
 fi
 
