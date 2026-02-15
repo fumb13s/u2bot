@@ -6,11 +6,12 @@ const parser = new XMLParser();
 const seenVideoIds = new Set();
 let isFirstRun = true;
 
-function entryToVideoData(entry) {
+function entryToVideoData(entry, author) {
   const videoId = entry['yt:videoId'];
   return {
     videoId,
     title: entry.title || 'Untitled',
+    author: author || entry?.author?.name || '',
     url: `https://www.youtube.com/watch?v=${videoId}`,
     date: entry.published
       ? new Date(entry.published).toLocaleDateString()
@@ -42,26 +43,32 @@ async function fetchFeedEntries(config) {
     return null;
   }
 
+  const author = parsed?.feed?.author?.name || '';
   const entries = parsed?.feed?.entry;
-  if (!entries) return [];
+  if (!entries) return { author, entries: [] };
 
-  return Array.isArray(entries) ? entries : [entries];
+  const entryList = Array.isArray(entries) ? entries : [entries];
+  return { author, entries: entryList };
 }
 
 async function fetchLatestVideo(config) {
-  const entries = await fetchFeedEntries(config);
-  if (!entries || entries.length === 0) return null;
-  return entryToVideoData(entries[0]);
+  const result = await fetchFeedEntries(config);
+  if (!result || result.entries.length === 0) return null;
+  return entryToVideoData(result.entries[0], result.author);
 }
 
 async function pollRssFeed(client, config) {
-  const entryList = await fetchFeedEntries(config);
+  const result = await fetchFeedEntries(config);
 
-  if (entryList === null) {
+  if (result === null) {
     state.lastRssPollAt = new Date();
     state.lastRssPollOk = false;
     return;
   }
+
+  const { author, entries: entryList } = result;
+
+  if (author) state.channelName = author;
 
   if (entryList.length === 0) {
     console.log('RSS: No entries found in feed.');
@@ -97,7 +104,7 @@ async function pollRssFeed(client, config) {
 
     seenVideoIds.add(videoId);
 
-    const videoData = entryToVideoData(entry);
+    const videoData = entryToVideoData(entry, author);
 
     try {
       await sendVideoNotification(channel, videoData, config);

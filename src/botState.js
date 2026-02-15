@@ -6,6 +6,7 @@ const state = {
   lastLiveCheckOk: null,
   isCurrentlyLive: false,
   seenVideoCount: 0,
+  channelName: '',
 };
 
 module.exports = state;

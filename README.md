@@ -80,7 +80,7 @@ Edit `config.json`:
 | `messages.video` | no | Customizable video notification template |
 | `messages.live` | no | Customizable live notification template |
 
-Message templates support `{title}`, `{url}`, and `{date}` placeholders.
+Message templates support `{title}`, `{author}`, `{url}`, and `{date}` placeholders. The `{author}` value is fetched automatically from the YouTube RSS feed.
 
 ## Creating the Discord Bot
 

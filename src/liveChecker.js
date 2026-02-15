@@ -40,6 +40,7 @@ async function fetchLiveStatus(config) {
     isLive,
     videoId: videoId || 'unknown',
     title,
+    author: state.channelName || '',
     url: videoId
       ? `https://www.youtube.com/watch?v=${videoId}`
       : liveUrl,

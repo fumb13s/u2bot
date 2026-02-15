@@ -15,22 +15,10 @@
   },
   "messages": {
     "video": {
-      "content": "New video from the channel!",
-      "embed": {
-        "title": "{title}",
-        "url": "{url}",
-        "description": "A new video was published on {date}",
-        "color": 16711680
-      }
+      "content": "{author} just uploaded a new video: **{title}**"
     },
     "live": {
-      "content": "The channel is live right now!",
-      "embed": {
-        "title": "{title}",
-        "url": "{url}",
-        "description": "Live stream started on {date}",
-        "color": 16729344
-      }
+      "content": "{author} is live now: **{title}**"
     }
   }
 }

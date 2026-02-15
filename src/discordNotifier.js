@@ -1,6 +1,7 @@
 function applyTemplate(str, vars) {
   return str
     .replace(/\{title\}/g, vars.title)
+    .replace(/\{author\}/g, vars.author)
     .replace(/\{url\}/g, vars.url)
     .replace(/\{date\}/g, vars.date);
 }
@@ -23,6 +24,7 @@ async function tryCrosspost(message, config) {
 async function sendVideoNotification(channel, videoData, config) {
   const vars = {
     title: videoData.title,
+    author: videoData.author || '',
     url: videoData.url,
     date: videoData.date,
   };
@@ -38,6 +40,7 @@ async function sendVideoNotification(channel, videoData, config) {
 async function sendLiveNotification(channel, streamData, config) {
   const vars = {
     title: streamData.title,
+    author: streamData.author || '',
     url: streamData.url,
     date: streamData.date,
   };
