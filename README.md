@@ -81,6 +81,16 @@ docker compose up -d --build # rebuild after updates
 docker compose restart
 ```
 
+## Updating
+
+Pull the latest code and redeploy with the update script:
+
+```bash
+bash scripts/update.sh
+```
+
+This runs `git pull`, rebuilds the Docker image, restarts the container, and prints the old and new version numbers.
+
 ## Project Structure
 
 ```

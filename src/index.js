@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const { version } = require('../package.json');
 const config = require('./config');
 const { startRssPoller } = require('./rssPoller');
 const { startLiveChecker } = require('./liveChecker');
@@ -11,7 +12,7 @@ let rssInterval;
 let liveInterval;
 
 client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}`);
+  console.log(`u2bot v${version} — Logged in as ${client.user.tag}`);
   rssInterval = startRssPoller(client, config);
   liveInterval = startLiveChecker(client, config);
 });

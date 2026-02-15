@@ -1,4 +1,5 @@
 const { sendLiveNotification } = require('./discordNotifier');
+const { version } = require('../package.json');
 
 let isCurrentlyLive = false;
 
@@ -8,7 +9,7 @@ async function checkLiveStatus(client, config) {
   let html;
   try {
     const res = await fetch(liveUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; u2bot/1.0)' },
+      headers: { 'User-Agent': `Mozilla/5.0 (compatible; u2bot/${version})` },
     });
     if (!res.ok) {
       console.error(`Live check fetch failed: ${res.status} ${res.statusText}`);
