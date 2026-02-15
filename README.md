@@ -8,6 +8,21 @@ YouTube-to-Discord notification bot. Posts to Discord when a channel uploads a n
 - A Discord bot token ([create one here](https://discord.com/developers/applications))
 - The YouTube channel ID you want to monitor (starts with `UC`)
 
+### Installing on a fresh VPS
+
+Install Docker (recommended):
+
+```bash
+curl -fsSL https://get.docker.com | sh
+```
+
+Or install Node.js if running without Docker:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
+sudo apt-get install -y nodejs
+```
+
 ## Quick Start
 
 ```bash
@@ -26,7 +41,8 @@ docker compose up -d
 ### Running without Docker
 
 ```bash
-npm run setup   # or: cp config.example.json config.json
+npm install                 # install dependencies
+npm run setup               # or: cp config.example.json config.json
 npm start
 ```
 
