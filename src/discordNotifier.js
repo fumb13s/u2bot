@@ -44,7 +44,8 @@ async function sendVideoNotification(channel, videoData, config) {
   const thumbnailUrl = `https://i.ytimg.com/vi/${videoData.videoId}/maxresdefault.jpg`;
   const embed = buildEmbed(template.embed, vars, thumbnailUrl);
 
-  const content = template.content ? applyTemplate(template.content, vars) : undefined;
+  const text = template.content ? applyTemplate(template.content, vars) : '';
+  const content = text ? `${text}\n${videoData.url}` : videoData.url;
   const message = await channel.send({ content, embeds: [embed] });
   console.log(`Sent video notification: ${videoData.title}`);
   await tryCrosspost(message, config);
@@ -60,7 +61,8 @@ async function sendLiveNotification(channel, streamData, config) {
   const thumbnailUrl = `https://i.ytimg.com/vi/${streamData.videoId}/hqdefault_live.jpg`;
   const embed = buildEmbed(template.embed, vars, thumbnailUrl);
 
-  const content = template.content ? applyTemplate(template.content, vars) : undefined;
+  const text = template.content ? applyTemplate(template.content, vars) : '';
+  const content = text ? `${text}\n${streamData.url}` : streamData.url;
   const message = await channel.send({ content, embeds: [embed] });
   console.log(`Sent live notification: ${streamData.title}`);
   await tryCrosspost(message, config);
