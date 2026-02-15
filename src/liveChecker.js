@@ -33,8 +33,12 @@ async function fetchLiveStatus(config) {
   const videoIdMatch = html.match(/(?:"videoId"\s*:\s*"|\/watch\?v=)([a-zA-Z0-9_-]{11})/);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
-  const titleMatch = html.match(/"title"\s*:\s*"([^"]+)"/);
-  const title = titleMatch ? titleMatch[1] : 'Live Stream';
+  // Match title from videoDetails to avoid picking up localized UI labels
+  const titleMatch = html.match(/"videoDetails"\s*:\s*\{[^}]*"title"\s*:\s*"([^"]+)"/)
+    || html.match(/"title"\s*:\s*\{"simpleText"\s*:\s*"([^"]+)"/)
+    || html.match(/"title"\s*:\s*"([^"]+)"/);
+  let title = titleMatch ? titleMatch[1] : 'Live Stream';
+  try { title = JSON.parse(`"${title}"`); } catch { /* keep raw */ }
 
   return {
     isLive,
