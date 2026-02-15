@@ -107,6 +107,9 @@ MaxAuthTries 3
 AllowUsers $DEPLOY_USER
 EOF
 
+# Ensure privilege separation directory exists (missing on some fresh installs)
+mkdir -p /run/sshd
+
 # Validate config before restarting
 sshd -t || fatal "sshd config test failed — not restarting. Fix /etc/ssh/sshd_config.d/hardening.conf manually."
 systemctl restart sshd
