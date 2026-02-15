@@ -44,11 +44,11 @@ read -rp "Proceed? [y/N] " confirm
 # ─── 2. System update ────────────────────────────────────────────────────────
 
 info "Updating package lists and upgrading installed packages..."
-apt update -qq
-apt upgrade -y -qq
+apt update
+apt upgrade -y
 
 info "Installing essentials..."
-apt install -y -qq ufw fail2ban unattended-upgrades
+apt install -y ufw fail2ban unattended-upgrades
 
 # ─── 3. Create non-root deploy user ──────────────────────────────────────────
 
@@ -205,7 +205,7 @@ EOF
     info "IPv6 will be disabled."
 fi
 
-sysctl --system -q
+sysctl --system
 info "sysctl hardening applied."
 
 # ─── 9. Misc ─────────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ if dpkg -l snapd &>/dev/null 2>&1; then
     read -rp "Remove snapd? [Y/n] " remove_snap
     remove_snap="${remove_snap:-Y}"
     if [[ "$remove_snap" =~ ^[Yy]$ ]]; then
-        apt purge -y -qq snapd
+        apt purge -y snapd
         info "snapd removed."
     fi
 fi
