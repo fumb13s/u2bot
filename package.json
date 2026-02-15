@@ -1,6 +1,6 @@
 {
   "name": "u2bot",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "YouTube to Discord notification bot — posts when new videos are uploaded or live streams start",
   "main": "src/index.js",
   "scripts": {

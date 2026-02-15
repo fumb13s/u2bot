@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+- Customizable notification templates with `{title}`, `{author}`, `{url}`, `{date}` variables
+- `{author}` template variable, populated from RSS feed
+- Interactive template configuration in setup wizard
+
+### Changed
+- `/test_live` now works even when not live — posts notification for latest stream
+- Dropped custom embeds in favor of Discord's native link preview (cleaner, more reliable)
+- Live stream title fetched via YouTube oEmbed API instead of HTML scraping — fixes incorrect titles caused by localized UI labels (e.g. "Übersicht" instead of actual stream title)
+
+### Fixed
+- Live stream title showing localized YouTube UI labels instead of actual video title
+- Template `\n` sequences not rendering as newlines in Discord messages
+- Runtime crash when notification templates were missing from config
+
 ## 1.1.0
 
 ### Added
