@@ -1,0 +1,8 @@
+services:
+  u2bot:
+    build: .
+    restart: unless-stopped
+    mem_limit: 128m
+    memswap_limit: 128m
+    volumes:
+      - ./config.json:/app/config.json:ro

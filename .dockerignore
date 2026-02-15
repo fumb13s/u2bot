@@ -1,0 +1,6 @@
+node_modules/
+config.json
+.git/
+.claude/
+setup.js
+*.md
