@@ -30,8 +30,6 @@ async function fetchLiveStatus(config) {
 
   const isLive = liveIndicators.some((pattern) => pattern.test(html));
 
-  if (!isLive) return { isLive: false };
-
   const videoIdMatch = html.match(/(?:"videoId"\s*:\s*"|\/watch\?v=)([a-zA-Z0-9_-]{11})/);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
@@ -39,7 +37,7 @@ async function fetchLiveStatus(config) {
   const title = titleMatch ? titleMatch[1] : 'Live Stream';
 
   return {
-    isLive: true,
+    isLive,
     videoId: videoId || 'unknown',
     title,
     url: videoId

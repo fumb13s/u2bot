@@ -42,13 +42,8 @@ async function handleTestLive(interaction) {
 
   try {
     const result = await fetchLiveStatus(config);
-    if (result === null) {
-      await interaction.editReply('Could not fetch live status from YouTube.');
-      return;
-    }
-
-    if (!result.isLive) {
-      await interaction.editReply('Channel is not currently live — no notification sent.');
+    if (result === null || result.videoId === 'unknown') {
+      await interaction.editReply('Could not fetch live stream info from YouTube.');
       return;
     }
 
@@ -59,7 +54,8 @@ async function handleTestLive(interaction) {
     }
 
     await sendLiveNotification(channel, result, config);
-    await interaction.editReply(`Test live notification sent to <#${config.discord.liveChannelId}> for: **${result.title}**`);
+    const liveNote = result.isLive ? ' (currently live)' : ' (not currently live)';
+    await interaction.editReply(`Test live notification sent to <#${config.discord.liveChannelId}> for: **${result.title}**${liveNote}`);
   } catch (err) {
     console.error('test_live error:', err.message);
     await interaction.editReply(`Error: ${err.message}`);
