@@ -104,6 +104,8 @@ Message templates support `{title}`, `{url}`, and `{date}` placeholders.
 
 If the bot was previously invited without the `applications.commands` scope, open the new URL and re-authorize — Discord will add the missing scope without removing the bot or its roles.
 
+The bot needs **Send Messages**, **Embed Links**, and (if using auto-publish) **Manage Messages** permissions specifically in the channels it posts to (`videoChannelId` and `liveChannelId`). If you don't want to grant these server-wide, you can set them per-channel: go to the channel's settings, open **Permissions**, add the bot's role, and enable the permissions there.
+
 ### 3. Get channel IDs
 
 You need Discord channel IDs for the config (`videoChannelId` and `liveChannelId`):
