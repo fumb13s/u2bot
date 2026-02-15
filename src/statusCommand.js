@@ -7,12 +7,24 @@ const STATUS_COMMAND = new SlashCommandBuilder()
   .setName('status')
   .setDescription('Show bot health and status');
 
+const TEST_VIDEO_COMMAND = new SlashCommandBuilder()
+  .setName('test_video')
+  .setDescription('Send a test video notification using the latest RSS entry');
+
+const TEST_LIVE_COMMAND = new SlashCommandBuilder()
+  .setName('test_live')
+  .setDescription('Send a test live notification (only if channel is live)');
+
 async function registerCommands(clientId) {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   await rest.put(Routes.applicationCommands(clientId), {
-    body: [STATUS_COMMAND.toJSON()],
+    body: [
+      STATUS_COMMAND.toJSON(),
+      TEST_VIDEO_COMMAND.toJSON(),
+      TEST_LIVE_COMMAND.toJSON(),
+    ],
   });
-  console.log('Registered /status slash command.');
+  console.log('Registered slash commands: /status, /test_video, /test_live');
 }
 
 function isPollerHealthy(lastPollAt, intervalMinutes) {

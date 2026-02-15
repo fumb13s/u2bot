@@ -6,7 +6,19 @@ const parser = new XMLParser();
 const seenVideoIds = new Set();
 let isFirstRun = true;
 
-async function pollRssFeed(client, config) {
+function entryToVideoData(entry) {
+  const videoId = entry['yt:videoId'];
+  return {
+    videoId,
+    title: entry.title || 'Untitled',
+    url: `https://www.youtube.com/watch?v=${videoId}`,
+    date: entry.published
+      ? new Date(entry.published).toLocaleDateString()
+      : new Date().toLocaleDateString(),
+  };
+}
+
+async function fetchFeedEntries(config) {
   const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${config.youtube.channelId}`;
 
   let xml;
@@ -14,16 +26,12 @@ async function pollRssFeed(client, config) {
     const res = await fetch(feedUrl);
     if (!res.ok) {
       console.error(`RSS fetch failed: ${res.status} ${res.statusText}`);
-      state.lastRssPollAt = new Date();
-      state.lastRssPollOk = false;
-      return;
+      return null;
     }
     xml = await res.text();
   } catch (err) {
     console.error('RSS fetch error:', err.message);
-    state.lastRssPollAt = new Date();
-    state.lastRssPollOk = false;
-    return;
+    return null;
   }
 
   let parsed;
@@ -31,21 +39,36 @@ async function pollRssFeed(client, config) {
     parsed = parser.parse(xml);
   } catch (err) {
     console.error('RSS parse error:', err.message);
+    return null;
+  }
+
+  const entries = parsed?.feed?.entry;
+  if (!entries) return [];
+
+  return Array.isArray(entries) ? entries : [entries];
+}
+
+async function fetchLatestVideo(config) {
+  const entries = await fetchFeedEntries(config);
+  if (!entries || entries.length === 0) return null;
+  return entryToVideoData(entries[0]);
+}
+
+async function pollRssFeed(client, config) {
+  const entryList = await fetchFeedEntries(config);
+
+  if (entryList === null) {
     state.lastRssPollAt = new Date();
     state.lastRssPollOk = false;
     return;
   }
 
-  const entries = parsed?.feed?.entry;
-  if (!entries) {
+  if (entryList.length === 0) {
     console.log('RSS: No entries found in feed.');
     state.lastRssPollAt = new Date();
     state.lastRssPollOk = true;
     return;
   }
-
-  // Normalize to array (single entry comes as object)
-  const entryList = Array.isArray(entries) ? entries : [entries];
 
   if (isFirstRun) {
     for (const entry of entryList) {
@@ -74,14 +97,7 @@ async function pollRssFeed(client, config) {
 
     seenVideoIds.add(videoId);
 
-    const videoData = {
-      videoId,
-      title: entry.title || 'Untitled',
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-      date: entry.published
-        ? new Date(entry.published).toLocaleDateString()
-        : new Date().toLocaleDateString(),
-    };
+    const videoData = entryToVideoData(entry);
 
     try {
       await sendVideoNotification(channel, videoData, config);
@@ -104,4 +120,4 @@ function startRssPoller(client, config) {
   return setInterval(() => pollRssFeed(client, config), intervalMs);
 }
 
-module.exports = { startRssPoller };
+module.exports = { startRssPoller, fetchLatestVideo };

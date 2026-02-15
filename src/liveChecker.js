@@ -4,7 +4,7 @@ const state = require('./botState');
 
 let isCurrentlyLive = false;
 
-async function checkLiveStatus(client, config) {
+async function fetchLiveStatus(config) {
   const liveUrl = `https://www.youtube.com/channel/${config.youtube.channelId}/live`;
 
   let html;
@@ -14,16 +14,12 @@ async function checkLiveStatus(client, config) {
     });
     if (!res.ok) {
       console.error(`Live check fetch failed: ${res.status} ${res.statusText}`);
-      state.lastLiveCheckAt = new Date();
-      state.lastLiveCheckOk = false;
-      return;
+      return null;
     }
     html = await res.text();
   } catch (err) {
     console.error('Live check fetch error:', err.message);
-    state.lastLiveCheckAt = new Date();
-    state.lastLiveCheckOk = false;
-    return;
+    return null;
   }
 
   const liveIndicators = [
@@ -34,25 +30,36 @@ async function checkLiveStatus(client, config) {
 
   const isLive = liveIndicators.some((pattern) => pattern.test(html));
 
-  if (isLive && !isCurrentlyLive) {
+  if (!isLive) return { isLive: false };
+
+  const videoIdMatch = html.match(/(?:"videoId"\s*:\s*"|\/watch\?v=)([a-zA-Z0-9_-]{11})/);
+  const videoId = videoIdMatch ? videoIdMatch[1] : null;
+
+  const titleMatch = html.match(/"title"\s*:\s*"([^"]+)"/);
+  const title = titleMatch ? titleMatch[1] : 'Live Stream';
+
+  return {
+    isLive: true,
+    videoId: videoId || 'unknown',
+    title,
+    url: videoId
+      ? `https://www.youtube.com/watch?v=${videoId}`
+      : liveUrl,
+    date: new Date().toLocaleDateString(),
+  };
+}
+
+async function checkLiveStatus(client, config) {
+  const result = await fetchLiveStatus(config);
+
+  if (result === null) {
+    state.lastLiveCheckAt = new Date();
+    state.lastLiveCheckOk = false;
+    return;
+  }
+
+  if (result.isLive && !isCurrentlyLive) {
     isCurrentlyLive = true;
-
-    // Extract video ID
-    const videoIdMatch = html.match(/(?:"videoId"\s*:\s*"|\/watch\?v=)([a-zA-Z0-9_-]{11})/);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-
-    // Extract stream title
-    const titleMatch = html.match(/"title"\s*:\s*"([^"]+)"/);
-    const title = titleMatch ? titleMatch[1] : 'Live Stream';
-
-    const streamData = {
-      videoId: videoId || 'unknown',
-      title,
-      url: videoId
-        ? `https://www.youtube.com/watch?v=${videoId}`
-        : liveUrl,
-      date: new Date().toLocaleDateString(),
-    };
 
     const channel = await client.channels.fetch(config.discord.liveChannelId);
     if (!channel) {
@@ -63,11 +70,11 @@ async function checkLiveStatus(client, config) {
     }
 
     try {
-      await sendLiveNotification(channel, streamData, config);
+      await sendLiveNotification(channel, result, config);
     } catch (err) {
       console.error('Failed to send live notification:', err.message);
     }
-  } else if (!isLive && isCurrentlyLive) {
+  } else if (!result.isLive && isCurrentlyLive) {
     isCurrentlyLive = false;
     console.log('Live stream has ended.');
   }
@@ -86,4 +93,4 @@ function startLiveChecker(client, config) {
   return setInterval(() => checkLiveStatus(client, config), intervalMs);
 }
 
-module.exports = { startLiveChecker };
+module.exports = { startLiveChecker, fetchLiveStatus };

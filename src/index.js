@@ -6,6 +6,7 @@ const { startRssPoller } = require('./rssPoller');
 const { startLiveChecker } = require('./liveChecker');
 const { startHealthServer } = require('./healthCheck');
 const { registerCommands, handleStatusInteraction } = require('./statusCommand');
+const { handleTestInteraction } = require('./testCommands');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -24,6 +25,7 @@ client.once('ready', async () => {
 });
 
 client.on(Events.InteractionCreate, handleStatusInteraction);
+client.on(Events.InteractionCreate, handleTestInteraction);
 
 function shutdown() {
   console.log('Shutting down...');
