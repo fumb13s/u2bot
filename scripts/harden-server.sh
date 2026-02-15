@@ -114,16 +114,16 @@ else
     echo "$DEPLOY_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$DEPLOY_USER"
     chmod 440 "/etc/sudoers.d/$DEPLOY_USER"
 
-    # Copy SSH authorized_keys from root
+    # Set up SSH key for the deploy user
     DEPLOY_HOME=$(eval echo "~$DEPLOY_USER")
     DEPLOY_SSH_DIR="$DEPLOY_HOME/.ssh"
     mkdir -p "$DEPLOY_SSH_DIR"
 
-    if [[ -f /root/.ssh/authorized_keys ]]; then
+    if [[ -s /root/.ssh/authorized_keys ]]; then
         cp /root/.ssh/authorized_keys "$DEPLOY_SSH_DIR/authorized_keys"
         info "Copied root's authorized_keys to $DEPLOY_USER."
     else
-        warn "No /root/.ssh/authorized_keys found."
+        warn "No usable root SSH keys found."
         echo "Paste the public SSH key for $DEPLOY_USER (one line):"
         read -r SSH_KEY
         echo "$SSH_KEY" > "$DEPLOY_SSH_DIR/authorized_keys"
