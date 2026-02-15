@@ -1,22 +1,8 @@
-const { EmbedBuilder } = require('discord.js');
-
 function applyTemplate(str, vars) {
   return str
     .replace(/\{title\}/g, vars.title)
     .replace(/\{url\}/g, vars.url)
     .replace(/\{date\}/g, vars.date);
-}
-
-function buildEmbed(template, vars, thumbnailUrl) {
-  const embed = new EmbedBuilder();
-
-  if (template.title) embed.setTitle(applyTemplate(template.title, vars));
-  if (template.url) embed.setURL(applyTemplate(template.url, vars));
-  if (template.description) embed.setDescription(applyTemplate(template.description, vars));
-  if (template.color != null) embed.setColor(template.color);
-  if (thumbnailUrl) embed.setImage(thumbnailUrl);
-
-  return embed;
 }
 
 async function tryCrosspost(message, config) {
@@ -41,12 +27,10 @@ async function sendVideoNotification(channel, videoData, config) {
     date: videoData.date,
   };
   const template = config.messages.video;
-  const thumbnailUrl = `https://i.ytimg.com/vi/${videoData.videoId}/maxresdefault.jpg`;
-  const embed = buildEmbed(template.embed, vars, thumbnailUrl);
 
   const text = template.content ? applyTemplate(template.content, vars) : '';
   const content = text ? `${text}\n${videoData.url}` : videoData.url;
-  const message = await channel.send({ content, embeds: [embed] });
+  const message = await channel.send({ content });
   console.log(`Sent video notification: ${videoData.title}`);
   await tryCrosspost(message, config);
 }
@@ -58,12 +42,10 @@ async function sendLiveNotification(channel, streamData, config) {
     date: streamData.date,
   };
   const template = config.messages.live;
-  const thumbnailUrl = `https://i.ytimg.com/vi/${streamData.videoId}/hqdefault_live.jpg`;
-  const embed = buildEmbed(template.embed, vars, thumbnailUrl);
 
   const text = template.content ? applyTemplate(template.content, vars) : '';
   const content = text ? `${text}\n${streamData.url}` : streamData.url;
-  const message = await channel.send({ content, embeds: [embed] });
+  const message = await channel.send({ content });
   console.log(`Sent live notification: ${streamData.title}`);
   await tryCrosspost(message, config);
 }
