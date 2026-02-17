@@ -15,7 +15,7 @@ const client = new Client({
 let rssInterval;
 let liveInterval;
 
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
   console.log(`u2bot v${version} — Logged in as ${client.user.tag}`);
   state.startedAt = new Date();
   rssInterval = startRssPoller(client, config);
