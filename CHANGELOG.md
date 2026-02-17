@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.2
+
+### Fixed
+- Deprecation warning for `ready` event — use `Events.ClientReady` instead
+- Deprecation warning for `ephemeral` option — use `MessageFlags.Ephemeral` instead
+
+### Added
+- Log successful RSS and live poll results for better observability
+
 ## 1.2.1
 
 ### Fixed
