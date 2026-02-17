@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+- RSS feed fetch returning 404 after extended uptime due to missing User-Agent header
+
 ## 1.2.0
 
 ### Added
