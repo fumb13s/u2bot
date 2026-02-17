@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const { fetchLatestVideo } = require('./rssPoller');
 const { fetchLiveStatus } = require('./liveChecker');
 const { sendVideoNotification, sendLiveNotification } = require('./discordNotifier');
@@ -14,7 +15,7 @@ async function handleTestInteraction(interaction) {
 }
 
 async function handleTestVideo(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const videoData = await fetchLatestVideo(config);
@@ -38,7 +39,7 @@ async function handleTestVideo(interaction) {
 }
 
 async function handleTestLive(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const result = await fetchLiveStatus(config);

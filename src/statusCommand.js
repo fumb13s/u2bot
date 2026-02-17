@@ -1,4 +1,4 @@
-const { REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { MessageFlags, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const { version } = require('../package.json');
 const config = require('./config');
 const state = require('./botState');
@@ -73,7 +73,7 @@ async function handleStatusInteraction(interaction) {
     ],
   };
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
 module.exports = { registerCommands, handleStatusInteraction };
