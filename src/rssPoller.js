@@ -116,6 +116,7 @@ async function pollRssFeed(client, config) {
     }
   }
 
+  console.log(`RSS: OK — ${entryList.length} entries, ${seenVideoIds.size} tracked.`);
   state.lastRssPollAt = new Date();
   state.lastRssPollOk = true;
   state.seenVideoCount = seenVideoIds.size;

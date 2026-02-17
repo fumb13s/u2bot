@@ -92,6 +92,7 @@ async function checkLiveStatus(client, config) {
     console.log('Live stream has ended.');
   }
 
+  console.log(`Live: OK — ${isCurrentlyLive ? 'live' : 'not live'}.`);
   state.lastLiveCheckAt = new Date();
   state.lastLiveCheckOk = true;
   state.isCurrentlyLive = isCurrentlyLive;
