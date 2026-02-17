@@ -1,5 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 const { sendVideoNotification } = require('./discordNotifier');
+const { version } = require('../package.json');
 const state = require('./botState');
 
 const parser = new XMLParser();
@@ -24,7 +25,9 @@ async function fetchFeedEntries(config) {
 
   let xml;
   try {
-    const res = await fetch(feedUrl);
+    const res = await fetch(feedUrl, {
+      headers: { 'User-Agent': `Mozilla/5.0 (compatible; u2bot/${version})` },
+    });
     if (!res.ok) {
       console.error(`RSS fetch failed: ${res.status} ${res.statusText}`);
       return null;
