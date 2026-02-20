@@ -73,6 +73,9 @@ async function checkLiveStatus(client, config) {
 
   if (result.isLive && !isCurrentlyLive) {
     isCurrentlyLive = true;
+    if (result.videoId && result.videoId !== 'unknown') {
+      state.liveVideoIds.add(result.videoId);
+    }
 
     const channel = await client.channels.fetch(config.discord.liveChannelId);
     if (!channel) {
@@ -107,4 +110,10 @@ function startLiveChecker(client, config) {
   return setInterval(() => checkLiveStatus(client, config), intervalMs);
 }
 
-module.exports = { startLiveChecker, fetchLiveStatus };
+async function isVideoLive(videoId, config) {
+  const result = await fetchLiveStatus(config);
+  if (!result) return false;
+  return result.isLive && result.videoId === videoId;
+}
+
+module.exports = { startLiveChecker, fetchLiveStatus, isVideoLive };

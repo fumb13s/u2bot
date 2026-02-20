@@ -7,6 +7,7 @@ const state = {
   isCurrentlyLive: false,
   seenVideoCount: 0,
   channelName: '',
+  liveVideoIds: new Set(),
 };
 
 module.exports = state;

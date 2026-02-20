@@ -1,5 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 const { sendVideoNotification } = require('./discordNotifier');
+const { isVideoLive } = require('./liveChecker');
 const { version } = require('../package.json');
 const state = require('./botState');
 
@@ -106,6 +107,17 @@ async function pollRssFeed(client, config) {
     if (!videoId || seenVideoIds.has(videoId)) continue;
 
     seenVideoIds.add(videoId);
+
+    if (state.liveVideoIds.has(videoId)) {
+      console.log(`RSS: Skipping ${videoId} — already flagged as live stream.`);
+      continue;
+    }
+
+    if (await isVideoLive(videoId, config)) {
+      state.liveVideoIds.add(videoId);
+      console.log(`RSS: Skipping ${videoId} — detected as live stream.`);
+      continue;
+    }
 
     const videoData = entryToVideoData(entry, author);
 
