@@ -1,6 +1,7 @@
 const http = require('http');
 const config = require('./config');
 const state = require('./botState');
+const { getAllWatchers, getWatcherState } = require('./watcherStore');
 
 function isPollerHealthy(lastPollAt, intervalMinutes) {
   if (!lastPollAt) return false;
@@ -13,23 +14,35 @@ function startHealthServer() {
 
   const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/healthz') {
-      const rssHealthy = isPollerHealthy(state.lastRssPollAt, config.polling.rssFeedIntervalMinutes);
-      const liveHealthy = isPollerHealthy(state.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes);
-      const healthy = rssHealthy && liveHealthy;
+      const watchers = getAllWatchers();
+      const watcherDetails = watchers.map((w) => {
+        const ws = getWatcherState(w.id);
+        const rssHealthy = ws ? isPollerHealthy(ws.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
+        const liveHealthy = ws ? isPollerHealthy(ws.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
+        return {
+          id: w.id,
+          label: ws?.channelName || w.label || w.id,
+          healthy: rssHealthy && liveHealthy,
+          rss: {
+            lastPollAt: ws?.lastRssPollAt,
+            ok: ws?.lastRssPollOk,
+            healthy: rssHealthy,
+          },
+          live: {
+            lastPollAt: ws?.lastLiveCheckAt,
+            ok: ws?.lastLiveCheckOk,
+            healthy: liveHealthy,
+          },
+        };
+      });
+
+      const healthy = watchers.length === 0 || watcherDetails.every((w) => w.healthy);
 
       const body = JSON.stringify({
         status: healthy ? 'healthy' : 'unhealthy',
         uptime: state.startedAt ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000) : 0,
-        rss: {
-          lastPollAt: state.lastRssPollAt,
-          ok: state.lastRssPollOk,
-          healthy: rssHealthy,
-        },
-        live: {
-          lastPollAt: state.lastLiveCheckAt,
-          ok: state.lastLiveCheckOk,
-          healthy: liveHealthy,
-        },
+        watcherCount: watchers.length,
+        watchers: watcherDetails,
       });
 
       res.writeHead(healthy ? 200 : 503, { 'Content-Type': 'application/json' });

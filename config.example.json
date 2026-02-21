@@ -1,12 +1,12 @@
 {
   "discord": {
     "token": "YOUR_BOT_TOKEN_HERE",
-    "videoChannelId": "DISCORD_CHANNEL_ID_FOR_VIDEOS",
-    "liveChannelId": "DISCORD_CHANNEL_ID_FOR_LIVE",
+    "videoChannelId": "(optional) DISCORD_CHANNEL_ID_FOR_VIDEOS — used for legacy single-channel migration",
+    "liveChannelId": "(optional) DISCORD_CHANNEL_ID_FOR_LIVE — used for legacy single-channel migration",
     "autoPublish": true
   },
   "youtube": {
-    "channelId": "UC_YOUTUBE_CHANNEL_ID"
+    "channelId": "(optional) UC_YOUTUBE_CHANNEL_ID — used for legacy single-channel migration"
   },
   "healthCheckPort": 3000,
   "polling": {

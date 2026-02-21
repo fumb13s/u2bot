@@ -18,9 +18,6 @@ try {
 
 const required = [
   ['discord.token', config.discord?.token],
-  ['discord.videoChannelId', config.discord?.videoChannelId],
-  ['discord.liveChannelId', config.discord?.liveChannelId],
-  ['youtube.channelId', config.youtube?.channelId],
 ];
 
 for (const [name, value] of required) {

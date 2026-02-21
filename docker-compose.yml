@@ -13,3 +13,4 @@ services:
       - /tmp
     volumes:
       - ./config.json:/app/config.json:ro
+      - ./watchers.json:/app/watchers.json

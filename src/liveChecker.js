@@ -1,11 +1,9 @@
 const { sendLiveNotification } = require('./discordNotifier');
 const { version } = require('../package.json');
-const state = require('./botState');
+const { getAllWatchers, getWatcherState } = require('./watcherStore');
 
-let isCurrentlyLive = false;
-
-async function fetchLiveStatus(config) {
-  const liveUrl = `https://www.youtube.com/channel/${config.youtube.channelId}/live`;
+async function fetchLiveStatus(ytChannelId, channelName) {
+  const liveUrl = `https://www.youtube.com/channel/${ytChannelId}/live`;
 
   let html;
   try {
@@ -54,7 +52,7 @@ async function fetchLiveStatus(config) {
     isLive,
     videoId: videoId || 'unknown',
     title,
-    author: state.channelName || '',
+    author: channelName || '',
     url: videoId
       ? `https://www.youtube.com/watch?v=${videoId}`
       : liveUrl,
@@ -62,26 +60,26 @@ async function fetchLiveStatus(config) {
   };
 }
 
-async function checkLiveStatus(client, config) {
-  const result = await fetchLiveStatus(config);
+async function checkLiveForWatcher(client, watcher, watcherState, config) {
+  const result = await fetchLiveStatus(watcher.id, watcherState.channelName);
 
   if (result === null) {
-    state.lastLiveCheckAt = new Date();
-    state.lastLiveCheckOk = false;
+    watcherState.lastLiveCheckAt = new Date();
+    watcherState.lastLiveCheckOk = false;
     return;
   }
 
-  if (result.isLive && !isCurrentlyLive) {
-    isCurrentlyLive = true;
+  if (result.isLive && !watcherState.isCurrentlyLive) {
+    watcherState.isCurrentlyLive = true;
     if (result.videoId && result.videoId !== 'unknown') {
-      state.liveVideoIds.add(result.videoId);
+      watcherState.liveVideoIds.add(result.videoId);
     }
 
-    const channel = await client.channels.fetch(config.discord.liveChannelId);
+    const channel = await client.channels.fetch(watcher.discordChannelId);
     if (!channel) {
-      console.error(`Could not fetch Discord channel: ${config.discord.liveChannelId}`);
-      state.lastLiveCheckAt = new Date();
-      state.lastLiveCheckOk = false;
+      console.error(`Could not fetch Discord channel: ${watcher.discordChannelId}`);
+      watcherState.lastLiveCheckAt = new Date();
+      watcherState.lastLiveCheckOk = false;
       return;
     }
 
@@ -90,15 +88,23 @@ async function checkLiveStatus(client, config) {
     } catch (err) {
       console.error('Failed to send live notification:', err.message);
     }
-  } else if (!result.isLive && isCurrentlyLive) {
-    isCurrentlyLive = false;
-    console.log('Live stream has ended.');
+  } else if (!result.isLive && watcherState.isCurrentlyLive) {
+    watcherState.isCurrentlyLive = false;
+    console.log(`Live [${watcher.label || watcher.id}]: Stream has ended.`);
   }
 
-  console.log(`Live: OK — ${isCurrentlyLive ? 'live' : 'not live'}.`);
-  state.lastLiveCheckAt = new Date();
-  state.lastLiveCheckOk = true;
-  state.isCurrentlyLive = isCurrentlyLive;
+  console.log(`Live [${watcher.label || watcher.id}]: OK — ${watcherState.isCurrentlyLive ? 'live' : 'not live'}.`);
+  watcherState.lastLiveCheckAt = new Date();
+  watcherState.lastLiveCheckOk = true;
+}
+
+async function checkAllWatchers(client, config) {
+  const watchers = getAllWatchers();
+  for (const watcher of watchers) {
+    const state = getWatcherState(watcher.id);
+    if (!state) continue;
+    await checkLiveForWatcher(client, watcher, state, config);
+  }
 }
 
 function startLiveChecker(client, config) {
@@ -106,12 +112,12 @@ function startLiveChecker(client, config) {
   console.log(`Live checker started (every ${config.polling.liveCheckIntervalMinutes} min).`);
 
   // Run immediately, then on interval
-  checkLiveStatus(client, config);
-  return setInterval(() => checkLiveStatus(client, config), intervalMs);
+  checkAllWatchers(client, config);
+  return setInterval(() => checkAllWatchers(client, config), intervalMs);
 }
 
-async function isVideoLive(videoId, config) {
-  const result = await fetchLiveStatus(config);
+async function isVideoLive(videoId, ytChannelId, channelName) {
+  const result = await fetchLiveStatus(ytChannelId, channelName);
   if (!result) return false;
   return result.isLive && result.videoId === videoId;
 }

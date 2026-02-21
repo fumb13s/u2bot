@@ -6,6 +6,7 @@ const readline = require("readline");
 const { execSync } = require("child_process");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
+const WATCHERS_PATH = path.join(__dirname, "watchers.json");
 const EXAMPLE_PATH = path.join(__dirname, "config.example.json");
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -163,61 +164,61 @@ async function main() {
   }
   config.discord.token = token;
 
-  header("YouTube Channel ID (required)");
+  header("YouTube Channel ID (optional — channels can be added at runtime via /watch)");
   console.log(`
   The channel ID starts with "UC" and is 24 characters long.
   Find it at: https://www.youtube.com/account_advanced
   Or from the channel URL: youtube.com/channel/UC...
+  Press Enter to skip — you can add channels later with /watch.
 `);
   const ytDefault = existing?.youtube?.channelId;
-  let ytChannel = "";
-  while (!ytChannel) {
-    ytChannel = (await ask(rl, `  YouTube channel ID${defaultHint(ytDefault)}: `)).trim();
-    if (!ytChannel && isRealValue(ytDefault)) ytChannel = ytDefault;
-    if (!ytChannel) console.log("  Channel ID cannot be empty.");
+  let ytChannel = (await ask(rl, `  YouTube channel ID${defaultHint(ytDefault)}: `)).trim();
+  if (!ytChannel && isRealValue(ytDefault)) ytChannel = ytDefault;
+  config.youtube = config.youtube ?? {};
+  if (ytChannel) {
+    config.youtube.channelId = ytChannel;
   }
-  config.youtube.channelId = ytChannel;
 
-  header("Discord Video Channel ID (required)");
+  header("Discord Video Channel ID (optional — used for legacy single-channel setup)");
   console.log(`
   This is the Discord channel where new-video notifications are posted.
+  Only needed if you set a YouTube channel ID above.
+  Press Enter to skip — you can configure channels later with /watch.
 
   To get a channel ID:
   1. Open Discord Settings → Advanced → enable Developer Mode
   2. Right-click the target channel → "Copy Channel ID"
 `);
   const videoDefault = existing?.discord?.videoChannelId;
-  let videoChannelId = "";
-  while (!videoChannelId) {
-    videoChannelId = (await ask(rl, `  Video channel ID${defaultHint(videoDefault)}: `)).trim();
-    if (!videoChannelId && isRealValue(videoDefault)) videoChannelId = videoDefault;
-    if (!videoChannelId) console.log("  Channel ID cannot be empty.");
-  }
-  config.discord.videoChannelId = videoChannelId;
+  let videoChannelId = (await ask(rl, `  Video channel ID${defaultHint(videoDefault)}: `)).trim();
+  if (!videoChannelId && isRealValue(videoDefault)) videoChannelId = videoDefault;
+  if (videoChannelId) {
+    config.discord.videoChannelId = videoChannelId;
 
-  header("Discord Live Channel ID (required)");
-  console.log(`
+    header("Discord Live Channel ID (optional)");
+    console.log(`
   This is the Discord channel where live-stream notifications are posted.
 `);
-  const liveDefault = existing?.discord?.liveChannelId;
-  const liveIsSameAsVideo = !isRealValue(liveDefault) || liveDefault === videoChannelId;
-  const liveAnswer = await ask(
-    rl,
-    `  Use the same channel as videos (${videoChannelId})? (${liveIsSameAsVideo ? "Y/n" : "y/N"}): `
-  );
-  const useSame = liveIsSameAsVideo
-    ? liveAnswer.trim().toLowerCase() !== "n"
-    : liveAnswer.trim().toLowerCase() === "y";
-  if (useSame) {
-    config.discord.liveChannelId = videoChannelId;
-  } else {
-    let liveChannelId = "";
-    while (!liveChannelId) {
-      liveChannelId = (await ask(rl, `  Live channel ID${defaultHint(liveDefault)}: `)).trim();
-      if (!liveChannelId && isRealValue(liveDefault)) liveChannelId = liveDefault;
-      if (!liveChannelId) console.log("  Channel ID cannot be empty.");
+    const liveDefault = existing?.discord?.liveChannelId;
+    const liveIsSameAsVideo = !isRealValue(liveDefault) || liveDefault === videoChannelId;
+    const liveAnswer = await ask(
+      rl,
+      `  Use the same channel as videos (${videoChannelId})? (${liveIsSameAsVideo ? "Y/n" : "y/N"}): `
+    );
+    const useSame = liveIsSameAsVideo
+      ? liveAnswer.trim().toLowerCase() !== "n"
+      : liveAnswer.trim().toLowerCase() === "y";
+    if (useSame) {
+      config.discord.liveChannelId = videoChannelId;
+    } else {
+      let liveChannelId = "";
+      while (!liveChannelId) {
+        liveChannelId = (await ask(rl, `  Live channel ID${defaultHint(liveDefault)}: `)).trim();
+        if (!liveChannelId && isRealValue(liveDefault)) liveChannelId = liveDefault;
+        if (!liveChannelId) console.log("  Channel ID cannot be empty.");
+      }
+      config.discord.liveChannelId = liveChannelId;
     }
-    config.discord.liveChannelId = liveChannelId;
   }
 
   // ── Optional values ──────────────────────────────────────────────────────
@@ -282,6 +283,12 @@ async function main() {
 
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
   console.log(`\nconfig.json written successfully.`);
+
+  // Seed watchers.json if it doesn't exist
+  if (!fs.existsSync(WATCHERS_PATH)) {
+    fs.writeFileSync(WATCHERS_PATH, "[]\n");
+    console.log("watchers.json created (empty).");
+  }
 
   // ── Next steps ───────────────────────────────────────────────────────────
 

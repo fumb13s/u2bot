@@ -11,6 +11,12 @@ git pull
 
 new_version=$(node -e "console.log(require('./package.json').version)")
 
+# Ensure watchers.json exists (required for Docker bind mount)
+if [ ! -f watchers.json ]; then
+  echo "[]" > watchers.json
+  echo "Created watchers.json"
+fi
+
 echo "Rebuilding and restarting containers..."
 docker compose up -d --build
 

@@ -2,6 +2,8 @@ const { MessageFlags, REST, Routes, SlashCommandBuilder } = require('discord.js'
 const { version } = require('../package.json');
 const config = require('./config');
 const state = require('./botState');
+const { getAllWatchers, getWatcherState } = require('./watcherStore');
+const { watcherCommandBuilders } = require('./watcherCommands');
 
 const STATUS_COMMAND = new SlashCommandBuilder()
   .setName('status')
@@ -9,11 +11,17 @@ const STATUS_COMMAND = new SlashCommandBuilder()
 
 const TEST_VIDEO_COMMAND = new SlashCommandBuilder()
   .setName('test_video')
-  .setDescription('Send a test video notification using the latest RSS entry');
+  .setDescription('Send a test video notification using the latest RSS entry')
+  .addStringOption((opt) =>
+    opt.setName('channel_id').setDescription('YouTube channel ID (optional if only one watcher)').setRequired(false),
+  );
 
 const TEST_LIVE_COMMAND = new SlashCommandBuilder()
   .setName('test_live')
-  .setDescription('Send a test live notification (only if channel is live)');
+  .setDescription('Send a test live notification (only if channel is live)')
+  .addStringOption((opt) =>
+    opt.setName('channel_id').setDescription('YouTube channel ID (optional if only one watcher)').setRequired(false),
+  );
 
 async function registerCommands(clientId) {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
@@ -22,9 +30,10 @@ async function registerCommands(clientId) {
       STATUS_COMMAND.toJSON(),
       TEST_VIDEO_COMMAND.toJSON(),
       TEST_LIVE_COMMAND.toJSON(),
+      ...watcherCommandBuilders.map((cmd) => cmd.toJSON()),
     ],
   });
-  console.log('Registered slash commands: /status, /test_video, /test_live');
+  console.log('Registered slash commands: /status, /test_video, /test_live, /watch, /unwatch, /watchers, /watcher');
 }
 
 function isPollerHealthy(lastPollAt, intervalMinutes) {
@@ -42,9 +51,23 @@ async function handleStatusInteraction(interaction) {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== 'status') return;
 
-  const rssHealthy = isPollerHealthy(state.lastRssPollAt, config.polling.rssFeedIntervalMinutes);
-  const liveHealthy = isPollerHealthy(state.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes);
-  const allHealthy = rssHealthy && liveHealthy;
+  const watchers = getAllWatchers();
+  const watcherCount = watchers.length;
+
+  let allHealthy = true;
+  const watcherLines = [];
+
+  for (const watcher of watchers) {
+    const ws = getWatcherState(watcher.id);
+    const name = ws?.channelName || watcher.label || watcher.id;
+    const rssOk = ws ? isPollerHealthy(ws.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
+    const liveOk = ws ? isPollerHealthy(ws.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
+    const healthy = rssOk && liveOk;
+    if (!healthy) allHealthy = false;
+    watcherLines.push(`${healthy ? 'OK' : 'Error'} — **${name}** → <#${watcher.discordChannelId}>`);
+  }
+
+  if (watcherCount === 0) allHealthy = true;
 
   const uptimeSeconds = state.startedAt ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000) : 0;
   const hours = Math.floor(uptimeSeconds / 3600);
@@ -52,25 +75,27 @@ async function handleStatusInteraction(interaction) {
   const seconds = uptimeSeconds % 60;
   const uptimeStr = `${hours}h ${minutes}m ${seconds}s`;
 
-  const rssStatus = state.lastRssPollAt
-    ? `${state.lastRssPollOk ? 'OK' : 'Error'} — ${formatTimestamp(state.lastRssPollAt)}`
-    : 'Not yet polled';
+  const fields = [
+    { name: 'Version', value: `v${version}`, inline: true },
+    { name: 'Uptime', value: uptimeStr, inline: true },
+    { name: 'Watchers', value: String(watcherCount), inline: true },
+  ];
 
-  const liveStatus = state.lastLiveCheckAt
-    ? `${state.lastLiveCheckOk ? 'OK' : 'Error'} — ${formatTimestamp(state.lastLiveCheckAt)}`
-    : 'Not yet checked';
+  if (watcherCount > 0 && watcherCount <= 5) {
+    fields.push({ name: 'Watcher Status', value: watcherLines.join('\n'), inline: false });
+  } else if (watcherCount > 5) {
+    const healthyCount = watcherLines.filter((l) => l.startsWith('OK')).length;
+    fields.push({
+      name: 'Watcher Status',
+      value: `${healthyCount}/${watcherCount} healthy — use \`/watchers\` for details`,
+      inline: false,
+    });
+  }
 
   const embed = {
     title: 'u2bot Status',
     color: allHealthy ? 0x00cc00 : 0xcc0000,
-    fields: [
-      { name: 'Version', value: `v${version}`, inline: true },
-      { name: 'Uptime', value: uptimeStr, inline: true },
-      { name: 'Currently Live', value: state.isCurrentlyLive ? 'Yes' : 'No', inline: true },
-      { name: 'RSS Poller', value: rssStatus, inline: false },
-      { name: 'Live Checker', value: liveStatus, inline: false },
-      { name: 'Tracked Videos', value: String(state.seenVideoCount), inline: true },
-    ],
+    fields,
   };
 
   await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });

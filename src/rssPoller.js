@@ -2,11 +2,9 @@ const { XMLParser } = require('fast-xml-parser');
 const { sendVideoNotification } = require('./discordNotifier');
 const { isVideoLive } = require('./liveChecker');
 const { version } = require('../package.json');
-const state = require('./botState');
+const { getAllWatchers, getWatcherState } = require('./watcherStore');
 
 const parser = new XMLParser();
-const seenVideoIds = new Set();
-let isFirstRun = true;
 
 function entryToVideoData(entry, author) {
   const videoId = entry['yt:videoId'];
@@ -21,8 +19,8 @@ function entryToVideoData(entry, author) {
   };
 }
 
-async function fetchFeedEntries(config) {
-  const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${config.youtube.channelId}`;
+async function fetchFeedEntries(ytChannelId) {
+  const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ytChannelId}`;
 
   let xml;
   try {
@@ -55,67 +53,67 @@ async function fetchFeedEntries(config) {
   return { author, entries: entryList };
 }
 
-async function fetchLatestVideo(config) {
-  const result = await fetchFeedEntries(config);
+async function fetchLatestVideo(ytChannelId) {
+  const result = await fetchFeedEntries(ytChannelId);
   if (!result || result.entries.length === 0) return null;
   return entryToVideoData(result.entries[0], result.author);
 }
 
-async function pollRssFeed(client, config) {
-  const result = await fetchFeedEntries(config);
+async function pollRssFeedForWatcher(client, watcher, watcherState, config) {
+  const result = await fetchFeedEntries(watcher.id);
 
   if (result === null) {
-    state.lastRssPollAt = new Date();
-    state.lastRssPollOk = false;
+    watcherState.lastRssPollAt = new Date();
+    watcherState.lastRssPollOk = false;
     return;
   }
 
   const { author, entries: entryList } = result;
 
-  if (author) state.channelName = author;
+  if (author) watcherState.channelName = author;
 
   if (entryList.length === 0) {
-    console.log('RSS: No entries found in feed.');
-    state.lastRssPollAt = new Date();
-    state.lastRssPollOk = true;
+    console.log(`RSS [${watcher.label || watcher.id}]: No entries found in feed.`);
+    watcherState.lastRssPollAt = new Date();
+    watcherState.lastRssPollOk = true;
     return;
   }
 
-  if (isFirstRun) {
+  if (watcherState.isFirstRun) {
     for (const entry of entryList) {
       const videoId = entry['yt:videoId'];
-      if (videoId) seenVideoIds.add(videoId);
+      if (videoId) watcherState.seenVideoIds.add(videoId);
     }
-    console.log(`RSS: First run — seeded ${seenVideoIds.size} existing video IDs.`);
-    isFirstRun = false;
-    state.lastRssPollAt = new Date();
-    state.lastRssPollOk = true;
-    state.seenVideoCount = seenVideoIds.size;
+    console.log(`RSS [${watcher.label || watcher.id}]: First run — seeded ${watcherState.seenVideoIds.size} existing video IDs.`);
+    watcherState.isFirstRun = false;
+    watcherState.lastRssPollAt = new Date();
+    watcherState.lastRssPollOk = true;
+    watcherState.seenVideoCount = watcherState.seenVideoIds.size;
     return;
   }
 
-  const channel = await client.channels.fetch(config.discord.videoChannelId);
+  const channel = await client.channels.fetch(watcher.discordChannelId);
   if (!channel) {
-    console.error(`Could not fetch Discord channel: ${config.discord.videoChannelId}`);
-    state.lastRssPollAt = new Date();
-    state.lastRssPollOk = false;
+    console.error(`Could not fetch Discord channel: ${watcher.discordChannelId}`);
+    watcherState.lastRssPollAt = new Date();
+    watcherState.lastRssPollOk = false;
     return;
   }
 
   for (const entry of entryList) {
     const videoId = entry['yt:videoId'];
-    if (!videoId || seenVideoIds.has(videoId)) continue;
+    if (!videoId || watcherState.seenVideoIds.has(videoId)) continue;
 
-    seenVideoIds.add(videoId);
+    watcherState.seenVideoIds.add(videoId);
 
-    if (state.liveVideoIds.has(videoId)) {
-      console.log(`RSS: Skipping ${videoId} — already flagged as live stream.`);
+    if (watcherState.liveVideoIds.has(videoId)) {
+      console.log(`RSS [${watcher.label || watcher.id}]: Skipping ${videoId} — already flagged as live stream.`);
       continue;
     }
 
-    if (await isVideoLive(videoId, config)) {
-      state.liveVideoIds.add(videoId);
-      console.log(`RSS: Skipping ${videoId} — detected as live stream.`);
+    if (await isVideoLive(videoId, watcher.id, watcherState.channelName)) {
+      watcherState.liveVideoIds.add(videoId);
+      console.log(`RSS [${watcher.label || watcher.id}]: Skipping ${videoId} — detected as live stream.`);
       continue;
     }
 
@@ -128,10 +126,19 @@ async function pollRssFeed(client, config) {
     }
   }
 
-  console.log(`RSS: OK — ${entryList.length} entries, ${seenVideoIds.size} tracked.`);
-  state.lastRssPollAt = new Date();
-  state.lastRssPollOk = true;
-  state.seenVideoCount = seenVideoIds.size;
+  console.log(`RSS [${watcher.label || watcher.id}]: OK — ${entryList.length} entries, ${watcherState.seenVideoIds.size} tracked.`);
+  watcherState.lastRssPollAt = new Date();
+  watcherState.lastRssPollOk = true;
+  watcherState.seenVideoCount = watcherState.seenVideoIds.size;
+}
+
+async function pollAllWatchers(client, config) {
+  const watchers = getAllWatchers();
+  for (const watcher of watchers) {
+    const state = getWatcherState(watcher.id);
+    if (!state) continue;
+    await pollRssFeedForWatcher(client, watcher, state, config);
+  }
 }
 
 function startRssPoller(client, config) {
@@ -139,8 +146,8 @@ function startRssPoller(client, config) {
   console.log(`RSS poller started (every ${config.polling.rssFeedIntervalMinutes} min).`);
 
   // Run immediately, then on interval
-  pollRssFeed(client, config);
-  return setInterval(() => pollRssFeed(client, config), intervalMs);
+  pollAllWatchers(client, config);
+  return setInterval(() => pollAllWatchers(client, config), intervalMs);
 }
 
 module.exports = { startRssPoller, fetchLatestVideo };
