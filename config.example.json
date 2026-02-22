@@ -2,7 +2,7 @@
   "discord": {
     "token": "YOUR_BOT_TOKEN_HERE",
     "videoChannelId": "(optional) DISCORD_CHANNEL_ID_FOR_VIDEOS — used for legacy single-channel migration",
-    "autoPublish": true
+    "autoPublish": false
   },
   "youtube": {
     "channelId": "(optional) UC_YOUTUBE_CHANNEL_ID — used for legacy single-channel migration"

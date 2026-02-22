@@ -200,7 +200,7 @@ async function main() {
 
   header("Optional Settings (press Enter for defaults)");
 
-  const currentAutoPublish = existing?.discord?.autoPublish ?? true;
+  const currentAutoPublish = existing?.discord?.autoPublish ?? false;
   const autoPublishAnswer = await ask(
     rl,
     `  Auto-publish messages in announcement channels? (${currentAutoPublish ? "Y/n" : "y/N"}): `

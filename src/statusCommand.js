@@ -16,16 +16,21 @@ const TEST_VIDEO_COMMAND = new SlashCommandBuilder()
     opt.setName('channel_id').setDescription('YouTube channel ID (optional if only one watcher)').setRequired(false),
   );
 
+const TOGGLE_AUTOPUBLISH_COMMAND = new SlashCommandBuilder()
+  .setName('toggle_autopublish')
+  .setDescription('Toggle auto-publishing messages in announcement channels');
+
 async function registerCommands(clientId) {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   await rest.put(Routes.applicationCommands(clientId), {
     body: [
       STATUS_COMMAND.toJSON(),
       TEST_VIDEO_COMMAND.toJSON(),
+      TOGGLE_AUTOPUBLISH_COMMAND.toJSON(),
       ...watcherCommandBuilders.map((cmd) => cmd.toJSON()),
     ],
   });
-  console.log('Registered slash commands: /status, /test_video, /watch, /unwatch, /watchers, /watcher');
+  console.log('Registered slash commands: /status, /test_video, /toggle_autopublish, /watch, /unwatch, /watchers, /watcher');
 }
 
 function isPollerHealthy(lastPollAt, intervalMinutes) {
@@ -70,6 +75,7 @@ async function handleStatusInteraction(interaction) {
     { name: 'Version', value: `v${version}`, inline: true },
     { name: 'Uptime', value: uptimeStr, inline: true },
     { name: 'Watchers', value: String(watcherCount), inline: true },
+    { name: 'Auto-Publish', value: config.discord.autoPublish ? 'On' : 'Off', inline: true },
   ];
 
   if (watcherCount > 0 && watcherCount <= 5) {
@@ -92,4 +98,13 @@ async function handleStatusInteraction(interaction) {
   await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
-module.exports = { registerCommands, handleStatusInteraction };
+async function handleToggleAutopublishInteraction(interaction) {
+  if (!interaction.isChatInputCommand()) return;
+  if (interaction.commandName !== 'toggle_autopublish') return;
+
+  config.discord.autoPublish = !config.discord.autoPublish;
+  const state = config.discord.autoPublish ? 'On' : 'Off';
+  await interaction.reply({ content: `Auto-publish is now **${state}**.`, flags: MessageFlags.Ephemeral });
+}
+
+module.exports = { registerCommands, handleStatusInteraction, handleToggleAutopublishInteraction };

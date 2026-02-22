@@ -28,7 +28,7 @@ for (const [name, value] of required) {
 }
 
 // Apply defaults for optional fields
-config.discord.autoPublish = config.discord.autoPublish ?? true;
+config.discord.autoPublish = config.discord.autoPublish ?? false;
 config.polling = config.polling ?? {};
 config.polling.rssFeedIntervalMinutes = config.polling.rssFeedIntervalMinutes ?? 3;
 config.healthCheckPort = config.healthCheckPort ?? 3000;

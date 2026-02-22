@@ -5,7 +5,7 @@ const state = require('./botState');
 const { loadWatchers, addWatcher, getWatcher, initWatcherState, getAllWatchers } = require('./watcherStore');
 const { startRssPoller } = require('./rssPoller');
 const { startHealthServer } = require('./healthCheck');
-const { registerCommands, handleStatusInteraction } = require('./statusCommand');
+const { registerCommands, handleStatusInteraction, handleToggleAutopublishInteraction } = require('./statusCommand');
 const { handleTestInteraction } = require('./testCommands');
 const { handleWatcherInteraction } = require('./watcherCommands');
 
@@ -43,6 +43,7 @@ client.once(Events.ClientReady, async () => {
 
 client.on(Events.InteractionCreate, handleStatusInteraction);
 client.on(Events.InteractionCreate, handleTestInteraction);
+client.on(Events.InteractionCreate, handleToggleAutopublishInteraction);
 client.on(Events.InteractionCreate, handleWatcherInteraction);
 
 function shutdown() {
