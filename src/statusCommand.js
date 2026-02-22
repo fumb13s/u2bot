@@ -16,24 +16,16 @@ const TEST_VIDEO_COMMAND = new SlashCommandBuilder()
     opt.setName('channel_id').setDescription('YouTube channel ID (optional if only one watcher)').setRequired(false),
   );
 
-const TEST_LIVE_COMMAND = new SlashCommandBuilder()
-  .setName('test_live')
-  .setDescription('Send a test live notification (only if channel is live)')
-  .addStringOption((opt) =>
-    opt.setName('channel_id').setDescription('YouTube channel ID (optional if only one watcher)').setRequired(false),
-  );
-
 async function registerCommands(clientId) {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
   await rest.put(Routes.applicationCommands(clientId), {
     body: [
       STATUS_COMMAND.toJSON(),
       TEST_VIDEO_COMMAND.toJSON(),
-      TEST_LIVE_COMMAND.toJSON(),
       ...watcherCommandBuilders.map((cmd) => cmd.toJSON()),
     ],
   });
-  console.log('Registered slash commands: /status, /test_video, /test_live, /watch, /unwatch, /watchers, /watcher');
+  console.log('Registered slash commands: /status, /test_video, /watch, /unwatch, /watchers, /watcher');
 }
 
 function isPollerHealthy(lastPollAt, intervalMinutes) {
@@ -61,8 +53,7 @@ async function handleStatusInteraction(interaction) {
     const ws = getWatcherState(watcher.id);
     const name = ws?.channelName || watcher.label || watcher.id;
     const rssOk = ws ? isPollerHealthy(ws.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
-    const liveOk = ws ? isPollerHealthy(ws.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
-    const healthy = rssOk && liveOk;
+    const healthy = rssOk;
     if (!healthy) allHealthy = false;
     watcherLines.push(`${healthy ? 'OK' : 'Error'} — **${name}** → <#${watcher.discordChannelId}>`);
   }

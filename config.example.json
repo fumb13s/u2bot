@@ -2,7 +2,6 @@
   "discord": {
     "token": "YOUR_BOT_TOKEN_HERE",
     "videoChannelId": "(optional) DISCORD_CHANNEL_ID_FOR_VIDEOS — used for legacy single-channel migration",
-    "liveChannelId": "(optional) DISCORD_CHANNEL_ID_FOR_LIVE — used for legacy single-channel migration",
     "autoPublish": true
   },
   "youtube": {
@@ -10,8 +9,7 @@
   },
   "healthCheckPort": 3000,
   "polling": {
-    "rssFeedIntervalMinutes": 3,
-    "liveCheckIntervalMinutes": 2
+    "rssFeedIntervalMinutes": 3
   },
   "messages": {
     "video": {

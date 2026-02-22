@@ -18,20 +18,14 @@ function startHealthServer() {
       const watcherDetails = watchers.map((w) => {
         const ws = getWatcherState(w.id);
         const rssHealthy = ws ? isPollerHealthy(ws.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
-        const liveHealthy = ws ? isPollerHealthy(ws.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
         return {
           id: w.id,
           label: ws?.channelName || w.label || w.id,
-          healthy: rssHealthy && liveHealthy,
+          healthy: rssHealthy,
           rss: {
             lastPollAt: ws?.lastRssPollAt,
             ok: ws?.lastRssPollOk,
             healthy: rssHealthy,
-          },
-          live: {
-            lastPollAt: ws?.lastLiveCheckAt,
-            ok: ws?.lastLiveCheckOk,
-            healthy: liveHealthy,
           },
         };
       });

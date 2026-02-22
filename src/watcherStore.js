@@ -68,13 +68,9 @@ function initWatcherState(id) {
   const state = {
     seenVideoIds: new Set(),
     isFirstRun: true,
-    isCurrentlyLive: false,
-    liveVideoIds: new Set(),
     channelName: '',
     lastRssPollAt: null,
     lastRssPollOk: null,
-    lastLiveCheckAt: null,
-    lastLiveCheckOk: null,
     seenVideoCount: 0,
   };
   watcherStates.set(id, state);

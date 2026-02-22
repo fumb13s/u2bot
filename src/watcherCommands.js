@@ -133,8 +133,7 @@ async function handleWatchers(interaction) {
     const state = getWatcherState(w.id);
     const name = state?.channelName || w.label || w.id;
     const rssOk = state ? isPollerHealthy(state.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
-    const liveOk = state ? isPollerHealthy(state.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
-    const health = rssOk && liveOk ? 'Healthy' : 'Unhealthy';
+    const health = rssOk ? 'Healthy' : 'Unhealthy';
     return `**${name}** (\`${w.id}\`) → <#${w.discordChannelId}> — ${health}`;
   });
 
@@ -162,25 +161,18 @@ async function handleWatcher(interaction) {
   const state = getWatcherState(channelId);
   const name = state?.channelName || watcher.label || watcher.id;
   const rssOk = state ? isPollerHealthy(state.lastRssPollAt, config.polling.rssFeedIntervalMinutes) : false;
-  const liveOk = state ? isPollerHealthy(state.lastLiveCheckAt, config.polling.liveCheckIntervalMinutes) : false;
 
   const rssStatus = state?.lastRssPollAt
     ? `${state.lastRssPollOk ? 'OK' : 'Error'} — ${formatTimestamp(state.lastRssPollAt)}`
     : 'Not yet polled';
 
-  const liveStatus = state?.lastLiveCheckAt
-    ? `${state.lastLiveCheckOk ? 'OK' : 'Error'} — ${formatTimestamp(state.lastLiveCheckAt)}`
-    : 'Not yet checked';
-
   const embed = {
     title: `Watcher: ${name}`,
-    color: rssOk && liveOk ? 0x00cc00 : 0xcc0000,
+    color: rssOk ? 0x00cc00 : 0xcc0000,
     fields: [
       { name: 'YouTube Channel ID', value: `\`${watcher.id}\``, inline: true },
       { name: 'Discord Channel', value: `<#${watcher.discordChannelId}>`, inline: true },
-      { name: 'Currently Live', value: state?.isCurrentlyLive ? 'Yes' : 'No', inline: true },
       { name: 'RSS Poller', value: rssStatus, inline: false },
-      { name: 'Live Checker', value: liveStatus, inline: false },
       { name: 'Tracked Videos', value: String(state?.seenVideoCount ?? 0), inline: true },
       { name: 'Added', value: formatTimestamp(new Date(watcher.addedAt)), inline: true },
     ],

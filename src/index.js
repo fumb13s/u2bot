@@ -4,7 +4,6 @@ const config = require('./config');
 const state = require('./botState');
 const { loadWatchers, addWatcher, getWatcher, initWatcherState, getAllWatchers } = require('./watcherStore');
 const { startRssPoller } = require('./rssPoller');
-const { startLiveChecker } = require('./liveChecker');
 const { startHealthServer } = require('./healthCheck');
 const { registerCommands, handleStatusInteraction } = require('./statusCommand');
 const { handleTestInteraction } = require('./testCommands');
@@ -15,7 +14,6 @@ const client = new Client({
 });
 
 let rssInterval;
-let liveInterval;
 
 client.once(Events.ClientReady, async () => {
   console.log(`u2bot v${version} — Logged in as ${client.user.tag}`);
@@ -39,7 +37,6 @@ client.once(Events.ClientReady, async () => {
   }
 
   rssInterval = startRssPoller(client, config);
-  liveInterval = startLiveChecker(client, config);
   await registerCommands(client.user.id);
   startHealthServer();
 });
@@ -51,7 +48,6 @@ client.on(Events.InteractionCreate, handleWatcherInteraction);
 function shutdown() {
   console.log('Shutting down...');
   clearInterval(rssInterval);
-  clearInterval(liveInterval);
   client.destroy();
   process.exit(0);
 }

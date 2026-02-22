@@ -1,10 +1,29 @@
 const { XMLParser } = require('fast-xml-parser');
-const { sendVideoNotification } = require('./discordNotifier');
-const { isVideoLive } = require('./liveChecker');
+const { sendVideoNotification, sendLiveNotification } = require('./discordNotifier');
 const { version } = require('../package.json');
 const { getAllWatchers, getWatcherState } = require('./watcherStore');
 
 const parser = new XMLParser();
+
+async function isLiveVideo(videoId) {
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { 'User-Agent': `Mozilla/5.0 (compatible; u2bot/${version})` },
+    });
+    if (!res.ok) return false;
+    const html = await res.text();
+
+    const liveIndicators = [
+      /"isLive"\s*:\s*true/,
+      /hqdefault_live\.jpg/,
+      /"style"\s*:\s*"LIVE"/,
+    ];
+    return liveIndicators.some((pattern) => pattern.test(html));
+  } catch (err) {
+    console.error(`Live check error for ${videoId}:`, err.message);
+    return false;
+  }
+}
 
 function entryToVideoData(entry, author) {
   const videoId = entry['yt:videoId'];
@@ -106,23 +125,18 @@ async function pollRssFeedForWatcher(client, watcher, watcherState, config) {
 
     watcherState.seenVideoIds.add(videoId);
 
-    if (watcherState.liveVideoIds.has(videoId)) {
-      console.log(`RSS [${watcher.label || watcher.id}]: Skipping ${videoId} — already flagged as live stream.`);
-      continue;
-    }
-
-    if (await isVideoLive(videoId, watcher.id, watcherState.channelName)) {
-      watcherState.liveVideoIds.add(videoId);
-      console.log(`RSS [${watcher.label || watcher.id}]: Skipping ${videoId} — detected as live stream.`);
-      continue;
-    }
-
     const videoData = entryToVideoData(entry, author);
+    const live = await isLiveVideo(videoId);
 
     try {
-      await sendVideoNotification(channel, videoData, config);
+      if (live) {
+        console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} detected as live stream.`);
+        await sendLiveNotification(channel, videoData, config);
+      } else {
+        await sendVideoNotification(channel, videoData, config);
+      }
     } catch (err) {
-      console.error(`Failed to send video notification for ${videoId}:`, err.message);
+      console.error(`Failed to send notification for ${videoId}:`, err.message);
     }
   }
 

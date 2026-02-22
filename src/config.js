@@ -31,7 +31,6 @@ for (const [name, value] of required) {
 config.discord.autoPublish = config.discord.autoPublish ?? true;
 config.polling = config.polling ?? {};
 config.polling.rssFeedIntervalMinutes = config.polling.rssFeedIntervalMinutes ?? 3;
-config.polling.liveCheckIntervalMinutes = config.polling.liveCheckIntervalMinutes ?? 2;
 config.healthCheckPort = config.healthCheckPort ?? 3000;
 config.messages = config.messages ?? {};
 config.messages.video = config.messages.video ?? { content: "🎬 **{author}** just uploaded a new video!\n**{title}**\n{url}" };

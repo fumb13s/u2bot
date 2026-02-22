@@ -70,13 +70,11 @@ Edit `config.json`:
 | Field | Required | Description |
 |---|---|---|
 | `discord.token` | yes | Bot token from the Discord developer portal |
-| `discord.videoChannelId` | yes | Channel ID for new-video notifications |
-| `discord.liveChannelId` | yes | Channel ID for live-stream notifications |
-| `youtube.channelId` | yes | YouTube channel ID (`UC...`) |
+| `discord.videoChannelId` | no | Channel ID for legacy single-channel migration |
+| `youtube.channelId` | no | YouTube channel ID for legacy single-channel migration |
 | `discord.autoPublish` | no | Auto-publish in announcement channels (default: `true`) |
 | `healthCheckPort` | no | Port for the `/healthz` endpoint (default: `3000`) |
 | `polling.rssFeedIntervalMinutes` | no | How often to poll the RSS feed (default: `3`) |
-| `polling.liveCheckIntervalMinutes` | no | How often to check live status (default: `2`) |
 | `messages.video` | no | Customizable video notification template |
 | `messages.live` | no | Customizable live notification template |
 
@@ -108,11 +106,11 @@ Message templates support `{title}`, `{author}`, `{url}`, and `{date}` placehold
 
 If the bot was previously invited without the `applications.commands` scope, open the new URL and re-authorize — Discord will add the missing scope without removing the bot or its roles.
 
-The bot needs **View Channel**, **Send Messages**, **Embed Links**, and (if using auto-publish) **Manage Messages** permissions specifically in the channels it posts to (`videoChannelId` and `liveChannelId`). If you don't want to grant these server-wide, you can set them per-channel: go to the channel's settings, open **Permissions**, add the bot's role, and enable the permissions there.
+The bot needs **View Channel**, **Send Messages**, **Embed Links**, and (if using auto-publish) **Manage Messages** permissions specifically in the channels it posts to. If you don't want to grant these server-wide, you can set them per-channel: go to the channel's settings, open **Permissions**, add the bot's role, and enable the permissions there.
 
 ### 3. Get channel IDs
 
-You need Discord channel IDs for the config (`videoChannelId` and `liveChannelId`):
+You need Discord channel IDs when adding watchers via `/watch`:
 
 1. Open Discord and go to **Settings > Advanced > Developer Mode** — turn it on
 2. Right-click the channel you want notifications posted in and click **Copy Channel ID**
@@ -159,8 +157,7 @@ u2bot/
     botState.js         # shared runtime state for health/status reporting
     healthCheck.js      # HTTP server exposing /healthz for Docker health checks
     statusCommand.js    # Discord /status slash command
-    rssPoller.js        # polls YouTube RSS feed for new videos
-    liveChecker.js      # checks if the channel is currently live
+    rssPoller.js        # polls YouTube RSS feed for new videos and live streams
     discordNotifier.js  # sends embed messages to Discord
   config.example.json   # template configuration
   setup.js              # interactive setup wizard

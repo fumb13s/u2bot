@@ -194,31 +194,6 @@ async function main() {
   if (!videoChannelId && isRealValue(videoDefault)) videoChannelId = videoDefault;
   if (videoChannelId) {
     config.discord.videoChannelId = videoChannelId;
-
-    header("Discord Live Channel ID (optional)");
-    console.log(`
-  This is the Discord channel where live-stream notifications are posted.
-`);
-    const liveDefault = existing?.discord?.liveChannelId;
-    const liveIsSameAsVideo = !isRealValue(liveDefault) || liveDefault === videoChannelId;
-    const liveAnswer = await ask(
-      rl,
-      `  Use the same channel as videos (${videoChannelId})? (${liveIsSameAsVideo ? "Y/n" : "y/N"}): `
-    );
-    const useSame = liveIsSameAsVideo
-      ? liveAnswer.trim().toLowerCase() !== "n"
-      : liveAnswer.trim().toLowerCase() === "y";
-    if (useSame) {
-      config.discord.liveChannelId = videoChannelId;
-    } else {
-      let liveChannelId = "";
-      while (!liveChannelId) {
-        liveChannelId = (await ask(rl, `  Live channel ID${defaultHint(liveDefault)}: `)).trim();
-        if (!liveChannelId && isRealValue(liveDefault)) liveChannelId = liveDefault;
-        if (!liveChannelId) console.log("  Channel ID cannot be empty.");
-      }
-      config.discord.liveChannelId = liveChannelId;
-    }
   }
 
   // ── Optional values ──────────────────────────────────────────────────────
@@ -244,14 +219,6 @@ async function main() {
   );
   const rssInterval = parseInt(rssAnswer.trim(), 10);
   config.polling.rssFeedIntervalMinutes = rssInterval > 0 ? rssInterval : currentRss;
-
-  const currentLive = existing?.polling?.liveCheckIntervalMinutes ?? 2;
-  const liveCheckAnswer = await ask(
-    rl,
-    `  Live-stream check interval in minutes (default: ${currentLive}): `
-  );
-  const liveInterval = parseInt(liveCheckAnswer.trim(), 10);
-  config.polling.liveCheckIntervalMinutes = liveInterval > 0 ? liveInterval : currentLive;
 
   header("Notification Templates (press Enter for defaults)");
   console.log(`
