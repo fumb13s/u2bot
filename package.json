@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "setup": "node setup.js",
-    "test": "node --test 'test/**/*.test.js'"
+    "test": "node --test 'test/*.test.js'",
+    "test:integration": "node --test 'test/integration/**/*.test.js'"
   },
   "engines": {
     "node": ">=18.0.0"
