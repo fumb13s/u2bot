@@ -22,7 +22,10 @@ const TOGGLE_AUTOPUBLISH_COMMAND = new SlashCommandBuilder()
 
 async function registerCommands(clientId) {
   const rest = new REST({ version: '10' }).setToken(config.discord.token);
-  await rest.put(Routes.applicationCommands(clientId), {
+  const route = config.discord.guildId
+    ? Routes.applicationGuildCommands(clientId, config.discord.guildId)
+    : Routes.applicationCommands(clientId);
+  await rest.put(route, {
     body: [
       STATUS_COMMAND.toJSON(),
       TEST_VIDEO_COMMAND.toJSON(),

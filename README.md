@@ -70,9 +70,10 @@ Edit `config.json`:
 | Field | Required | Description |
 |---|---|---|
 | `discord.token` | yes | Bot token from the Discord developer portal |
+| `discord.guildId` | no | Server (guild) ID — makes slash commands appear instantly (default: global) |
 | `discord.videoChannelId` | no | Channel ID for legacy single-channel migration |
 | `youtube.channelId` | no | YouTube channel ID for legacy single-channel migration |
-| `discord.autoPublish` | no | Auto-publish in announcement channels (default: `true`) |
+| `discord.autoPublish` | no | Auto-publish in announcement channels (default: `false`) |
 | `healthCheckPort` | no | Port for the `/healthz` endpoint (default: `3000`) |
 | `polling.rssFeedIntervalMinutes` | no | How often to poll the RSS feed (default: `3`) |
 | `messages.video` | no | Customizable video notification template |

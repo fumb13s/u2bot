@@ -28,6 +28,7 @@ for (const [name, value] of required) {
 }
 
 // Apply defaults for optional fields
+config.discord.guildId = config.discord.guildId ?? '';
 config.discord.autoPublish = config.discord.autoPublish ?? false;
 config.polling = config.polling ?? {};
 config.polling.rssFeedIntervalMinutes = config.polling.rssFeedIntervalMinutes ?? 3;

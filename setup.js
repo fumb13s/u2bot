@@ -164,6 +164,21 @@ async function main() {
   }
   config.discord.token = token;
 
+  header("Discord Server (Guild) ID (recommended)");
+  console.log(`
+  Setting a guild ID makes slash commands appear instantly in your server
+  instead of waiting up to an hour for global command propagation.
+
+  To get the guild ID:
+  1. Open Discord Settings → Advanced → enable Developer Mode
+  2. Right-click your server name in the sidebar → "Copy Server ID"
+  Press Enter to skip (commands will be registered globally).
+`);
+  const guildDefault = existing?.discord?.guildId;
+  let guildId = (await ask(rl, `  Guild ID${defaultHint(guildDefault)}: `)).trim();
+  if (!guildId && isRealValue(guildDefault)) guildId = guildDefault;
+  config.discord.guildId = guildId || '';
+
   header("YouTube Channel ID (optional — channels can be added at runtime via /watch)");
   console.log(`
   The channel ID starts with "UC" and is 24 characters long.
