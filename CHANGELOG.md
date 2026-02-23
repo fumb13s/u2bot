@@ -1,11 +1,21 @@
 # Changelog
 
-## 1.2.3
+## 1.3.0
 
 ### Added
-- Suppress duplicate Discord notifications for live streams detected by both RSS and live checker
-- Shared `liveVideoIds` state so the RSS poller skips videos already flagged as live
-- Fallback live-page check in RSS poller for when it sees a live video before the live checker does
+- Runtime watcher management via `/watch`, `/unwatch`, `/watchers`, and `/watcher` slash commands
+- `/toggle_autopublish` slash command to flip auto-publish at runtime
+- Guild command registration via `discord.guildId` — slash commands appear instantly instead of waiting up to an hour
+- Test suite using `node:test` (87 tests, zero external deps) including integration tests against live YouTube RSS
+- Guild ID prompt in interactive setup wizard
+
+### Changed
+- Removed dedicated live checker — live streams are now detected entirely via RSS poller
+- Default `discord.autoPublish` to `false`
+
+### Fixed
+- EISDIR crash when `watchers.json` is a Docker-created directory
+- Update script failing when `watchers.json` is a Docker-created directory
 
 ## 1.2.2
 
