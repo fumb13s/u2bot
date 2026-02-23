@@ -107,4 +107,4 @@ async function handleToggleAutopublishInteraction(interaction) {
   await interaction.reply({ content: `Auto-publish is now **${state}**.`, flags: MessageFlags.Ephemeral });
 }
 
-module.exports = { registerCommands, handleStatusInteraction, handleToggleAutopublishInteraction };
+module.exports = { registerCommands, handleStatusInteraction, handleToggleAutopublishInteraction, isPollerHealthy, formatTimestamp };

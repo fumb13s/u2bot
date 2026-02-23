@@ -1,4 +1,4 @@
-const { readFileSync, writeFileSync } = require('fs');
+const fs = require('fs');
 const { join } = require('path');
 
 const WATCHERS_PATH = join(__dirname, '..', 'watchers.json');
@@ -8,7 +8,7 @@ const watcherStates = new Map();
 
 function loadWatchers() {
   try {
-    const raw = readFileSync(WATCHERS_PATH, 'utf-8');
+    const raw = fs.readFileSync(WATCHERS_PATH, 'utf-8');
     watchers = JSON.parse(raw);
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -22,7 +22,7 @@ function loadWatchers() {
 }
 
 function saveWatchers() {
-  writeFileSync(WATCHERS_PATH, JSON.stringify(watchers, null, 2) + '\n');
+  fs.writeFileSync(WATCHERS_PATH, JSON.stringify(watchers, null, 2) + '\n');
 }
 
 function addWatcher(id, discordChannelId, label) {

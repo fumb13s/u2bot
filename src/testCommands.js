@@ -64,4 +64,4 @@ async function handleTestVideo(interaction) {
   }
 }
 
-module.exports = { handleTestInteraction };
+module.exports = { handleTestInteraction, resolveWatcher };

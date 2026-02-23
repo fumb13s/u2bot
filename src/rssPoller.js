@@ -164,4 +164,4 @@ function startRssPoller(client, config) {
   return setInterval(() => pollAllWatchers(client, config), intervalMs);
 }
 
-module.exports = { startRssPoller, fetchLatestVideo };
+module.exports = { startRssPoller, fetchLatestVideo, entryToVideoData, isLiveVideo, fetchFeedEntries, pollRssFeedForWatcher };

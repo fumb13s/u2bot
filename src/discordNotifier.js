@@ -52,4 +52,4 @@ async function sendLiveNotification(channel, streamData, config) {
   await tryCrosspost(message, config);
 }
 
-module.exports = { sendVideoNotification, sendLiveNotification };
+module.exports = { applyTemplate, tryCrosspost, sendVideoNotification, sendLiveNotification };
