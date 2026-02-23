@@ -11,7 +11,7 @@ function loadWatchers() {
     const raw = fs.readFileSync(WATCHERS_PATH, 'utf-8');
     watchers = JSON.parse(raw);
   } catch (err) {
-    if (err.code === 'ENOENT') {
+    if (err.code === 'ENOENT' || err.code === 'EISDIR') {
       watchers = [];
     } else {
       console.error('Failed to parse watchers.json:', err.message);
@@ -22,6 +22,14 @@ function loadWatchers() {
 }
 
 function saveWatchers() {
+  try {
+    const stat = fs.statSync(WATCHERS_PATH);
+    if (stat.isDirectory()) {
+      fs.rmdirSync(WATCHERS_PATH);
+    }
+  } catch {
+    // ENOENT is fine — file doesn't exist yet
+  }
   fs.writeFileSync(WATCHERS_PATH, JSON.stringify(watchers, null, 2) + '\n');
 }
 
