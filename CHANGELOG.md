@@ -17,6 +17,13 @@
 - EISDIR crash when `watchers.json` is a Docker-created directory
 - Update script failing when `watchers.json` is a Docker-created directory
 
+## 1.2.3
+
+### Added
+- Suppress duplicate Discord notifications for live streams detected by both RSS and live checker
+- Shared `liveVideoIds` state so the RSS poller skips videos already flagged as live
+- Fallback live-page check in RSS poller for when it sees a live video before the live checker does
+
 ## 1.2.2
 
 ### Fixed
