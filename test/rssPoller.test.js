@@ -71,17 +71,52 @@ describe('isLiveVideo', () => {
     mock.restoreAll();
   });
 
-  it('detects live indicators in HTML', async () => {
+  it('detects live stream in ytInitialPlayerResponse', async () => {
     mock.method(globalThis, 'fetch', async () => ({
       ok: true,
-      text: async () => '<html>"isLive":true some content</html>',
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"live123","isLive":true,"isLiveContent":true}};</script></html>',
     }));
 
     const result = await isLiveVideo('live123');
     assert.equal(result, true);
   });
 
-  it('returns false when no live indicators', async () => {
+  it('returns false for regular upload', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"vid1","isLive":false,"isLiveContent":false}};</script></html>',
+    }));
+
+    const result = await isLiveVideo('vid1');
+    assert.equal(result, false);
+  });
+
+  it('returns false when live indicators only appear in related videos', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"upload1","isLive":false,"isLiveContent":false}};</script>' +
+        '<script>var ytInitialData = {"contents":{"relatedVideo":{"isLive":true,"isLiveContent":true}}};</script></html>',
+    }));
+
+    const result = await isLiveVideo('upload1');
+    assert.equal(result, false);
+  });
+
+  it('returns false for VOD of past stream (isLive false, isLiveContent true)', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = {"videoDetails":{"videoId":"vod1","isLive":false,"isLiveContent":true}};</script></html>',
+    }));
+
+    const result = await isLiveVideo('vod1');
+    assert.equal(result, false);
+  });
+
+  it('returns false when ytInitialPlayerResponse is missing', async () => {
     mock.method(globalThis, 'fetch', async () => ({
       ok: true,
       text: async () => '<html>normal video page</html>',
@@ -307,7 +342,11 @@ describe('pollRssFeedForWatcher', () => {
         };
       }
       // isLiveVideo check — IS live
-      return { ok: true, text: async () => '<html>"isLive":true</html>' };
+      return {
+        ok: true,
+        text: async () =>
+          '<html><script>var ytInitialPlayerResponse = {"videoDetails":{"isLive":true,"isLiveContent":true}};</script></html>',
+      };
     });
 
     const mockMessage = { crosspost: mock.fn() };

@@ -13,12 +13,23 @@ async function isLiveVideo(videoId) {
     if (!res.ok) return false;
     const html = await res.text();
 
-    const liveIndicators = [
-      /"isLive"\s*:\s*true/,
-      /hqdefault_live\.jpg/,
-      /"style"\s*:\s*"LIVE"/,
-    ];
-    return liveIndicators.some((pattern) => pattern.test(html));
+    // Scope the check to ytInitialPlayerResponse so we only inspect the
+    // target video's own metadata, not related/recommended videos on the page.
+    const marker = 'ytInitialPlayerResponse';
+    const startIdx = html.indexOf(marker);
+    if (startIdx === -1) return false;
+
+    // Bound the search to the player response variable, ending at the next
+    // variable declaration or closing script tag to avoid bleeding into
+    // ytInitialData (which contains related/recommended video metadata).
+    const rest = html.substring(startIdx);
+    const endIdx = rest.search(/;\s*(?:var\s|<\/script)/);
+    const section = endIdx > 0 ? rest.substring(0, endIdx) : rest.substring(0, 5000);
+
+    return (
+      /"isLiveContent"\s*:\s*true/.test(section) &&
+      /"isLive"\s*:\s*true/.test(section)
+    );
   } catch (err) {
     console.error(`Live check error for ${videoId}:`, err.message);
     return false;

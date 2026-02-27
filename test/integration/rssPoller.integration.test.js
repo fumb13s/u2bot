@@ -115,5 +115,29 @@ describe('rssPoller integration (live YouTube RSS)', () => {
 
       assert.equal(typeof result, 'boolean', 'isLiveVideo should return a boolean');
     });
+
+    // "YouTube Rewind 2019" — a regular upload that will never be live
+    it('returns false for a known regular video', async (t) => {
+      if (skipIfOffline(t)) return;
+
+      const result = await isLiveVideo('YbJOTdZBX1g');
+      assert.equal(result, false, 'regular upload should not be detected as live');
+    });
+
+    // "lofi hip hop radio" by Lofi Girl — a 24/7 live stream
+    it('returns true for a known live stream', async (t) => {
+      if (skipIfOffline(t)) return;
+
+      const result = await isLiveVideo('jfKfPfyJRdk');
+      assert.equal(result, true, '24/7 live stream should be detected as live');
+    });
+
+    // Past live stream VOD — should not be detected as currently live
+    it('returns false for a known past live stream', async (t) => {
+      if (skipIfOffline(t)) return;
+
+      const result = await isLiveVideo('deExqOtEm5E');
+      assert.equal(result, false, 'past live stream VOD should not be detected as live');
+    });
   });
 });
