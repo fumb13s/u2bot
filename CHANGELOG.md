@@ -16,6 +16,7 @@
 ### Fixed
 - EISDIR crash when `watchers.json` is a Docker-created directory
 - Update script failing when `watchers.json` is a Docker-created directory
+- False positive live stream detection for regular video uploads — live check now scoped to the video's own player metadata and requires both `isLiveContent` and `isLive` to be true
 
 ## 1.2.3
 
