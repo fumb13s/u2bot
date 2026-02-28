@@ -75,6 +75,7 @@ function initWatcherState(id) {
 
   const state = {
     seenVideoIds: new Set(),
+    pendingVideoIds: new Map(),
     isFirstRun: true,
     channelName: '',
     lastRssPollAt: null,

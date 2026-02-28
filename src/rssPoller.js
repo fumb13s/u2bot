@@ -130,15 +130,9 @@ async function pollRssFeedForWatcher(client, watcher, watcherState, config) {
     return;
   }
 
-  for (const entry of entryList) {
-    const videoId = entry['yt:videoId'];
-    if (!videoId || watcherState.seenVideoIds.has(videoId)) continue;
-
-    watcherState.seenVideoIds.add(videoId);
-
-    const videoData = entryToVideoData(entry, author);
+  // Process pending videos from previous poll cycle (deferred live check)
+  for (const [videoId, videoData] of watcherState.pendingVideoIds) {
     const live = await isLiveVideo(videoId);
-
     try {
       if (live) {
         console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} detected as live stream.`);
@@ -149,6 +143,18 @@ async function pollRssFeedForWatcher(client, watcher, watcherState, config) {
     } catch (err) {
       console.error(`Failed to send notification for ${videoId}:`, err.message);
     }
+  }
+  watcherState.pendingVideoIds.clear();
+
+  // Queue new videos as pending (will be processed next poll cycle)
+  for (const entry of entryList) {
+    const videoId = entry['yt:videoId'];
+    if (!videoId || watcherState.seenVideoIds.has(videoId)) continue;
+
+    watcherState.seenVideoIds.add(videoId);
+    const videoData = entryToVideoData(entry, author);
+    watcherState.pendingVideoIds.set(videoId, videoData);
+    console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} queued as pending (deferred live check).`);
   }
 
   console.log(`RSS [${watcher.label || watcher.id}]: OK — ${entryList.length} entries, ${watcherState.seenVideoIds.size} tracked.`);

@@ -266,6 +266,7 @@ describe('pollRssFeedForWatcher', () => {
   function makeWatcherState() {
     return {
       seenVideoIds: new Set(),
+      pendingVideoIds: new Map(),
       isFirstRun: true,
       channelName: '',
       lastRssPollAt: null,
@@ -299,8 +300,7 @@ describe('pollRssFeedForWatcher', () => {
     assert.equal(client.channels.fetch.mock.callCount(), 0);
   });
 
-  it('sends notification for new videos on subsequent runs', async () => {
-    // First call returns RSS feed
+  it('sends notification for new videos after two poll cycles (deferred)', async () => {
     mock.method(globalThis, 'fetch', async (url) => {
       if (url.includes('feeds/videos.xml')) {
         return {
@@ -326,14 +326,19 @@ describe('pollRssFeedForWatcher', () => {
       messages: { video: { content: '{url}' }, live: { content: '{url}' } },
     };
 
+    // First poll: vid1 is new → queued as pending, no notification yet
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
-
-    // Should have sent notification for vid1 (new) but not vid2 (seen)
-    assert.equal(mockChannel.send.mock.callCount(), 1);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
     assert.ok(watcherState.seenVideoIds.has('vid1'));
+    assert.equal(watcherState.pendingVideoIds.size, 1);
+
+    // Second poll: pending vid1 is processed → notification sent
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 1);
+    assert.equal(watcherState.pendingVideoIds.size, 0);
   });
 
-  it('sends live notification when video is live', async () => {
+  it('sends live notification when deferred video is detected as live', async () => {
     mock.method(globalThis, 'fetch', async (url) => {
       if (url.includes('feeds/videos.xml')) {
         return {
@@ -365,11 +370,17 @@ describe('pollRssFeedForWatcher', () => {
       },
     };
 
+    // First poll: solo1 queued as pending
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
+    assert.equal(watcherState.pendingVideoIds.size, 1);
 
+    // Second poll: pending solo1 processed, detected as live
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 1);
     const sentContent = mockChannel.send.mock.calls[0].arguments[0].content;
     assert.ok(sentContent.startsWith('live:'));
+    assert.equal(watcherState.pendingVideoIds.size, 0);
   });
 
   it('handles fetch failure', async () => {
