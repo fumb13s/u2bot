@@ -130,30 +130,37 @@ async function pollRssFeedForWatcher(client, watcher, watcherState, config) {
     return;
   }
 
-  // Process pending videos from previous poll cycle (deferred live check)
-  for (const [videoId, videoData] of watcherState.pendingVideoIds) {
+  // Process pending videos — notify after 2 poll cycles to allow YouTube
+  // time to update isLive metadata on the watch page.
+  for (const [videoId, pending] of watcherState.pendingVideoIds) {
+    pending.pollsSeen++;
+    if (pending.pollsSeen < 2) {
+      console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} pending (cycle ${pending.pollsSeen}/2).`);
+      continue;
+    }
+
     const live = await isLiveVideo(videoId);
     try {
       if (live) {
         console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} detected as live stream.`);
-        await sendLiveNotification(channel, videoData, config);
+        await sendLiveNotification(channel, pending.videoData, config);
       } else {
-        await sendVideoNotification(channel, videoData, config);
+        await sendVideoNotification(channel, pending.videoData, config);
       }
     } catch (err) {
       console.error(`Failed to send notification for ${videoId}:`, err.message);
     }
+    watcherState.pendingVideoIds.delete(videoId);
   }
-  watcherState.pendingVideoIds.clear();
 
-  // Queue new videos as pending (will be processed next poll cycle)
+  // Queue new videos as pending (will be checked after 2 poll cycles)
   for (const entry of entryList) {
     const videoId = entry['yt:videoId'];
     if (!videoId || watcherState.seenVideoIds.has(videoId)) continue;
 
     watcherState.seenVideoIds.add(videoId);
     const videoData = entryToVideoData(entry, author);
-    watcherState.pendingVideoIds.set(videoId, videoData);
+    watcherState.pendingVideoIds.set(videoId, { videoData, pollsSeen: 0 });
     console.log(`RSS [${watcher.label || watcher.id}]: ${videoId} queued as pending (deferred live check).`);
   }
 

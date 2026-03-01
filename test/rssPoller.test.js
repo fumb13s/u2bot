@@ -300,7 +300,7 @@ describe('pollRssFeedForWatcher', () => {
     assert.equal(client.channels.fetch.mock.callCount(), 0);
   });
 
-  it('sends notification for new videos after two poll cycles (deferred)', async () => {
+  it('sends notification for new videos after three poll cycles (deferred 2 cycles)', async () => {
     mock.method(globalThis, 'fetch', async (url) => {
       if (url.includes('feeds/videos.xml')) {
         return {
@@ -326,13 +326,18 @@ describe('pollRssFeedForWatcher', () => {
       messages: { video: { content: '{url}' }, live: { content: '{url}' } },
     };
 
-    // First poll: vid1 is new → queued as pending, no notification yet
+    // Poll 1: vid1 is new → queued as pending (pollsSeen=0)
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 0);
     assert.ok(watcherState.seenVideoIds.has('vid1'));
     assert.equal(watcherState.pendingVideoIds.size, 1);
 
-    // Second poll: pending vid1 is processed → notification sent
+    // Poll 2: pending vid1 incremented (pollsSeen=1), still not ready
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
+    assert.equal(watcherState.pendingVideoIds.size, 1);
+
+    // Poll 3: pending vid1 reaches pollsSeen=2 → notification sent
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 1);
     assert.equal(watcherState.pendingVideoIds.size, 0);
@@ -370,12 +375,17 @@ describe('pollRssFeedForWatcher', () => {
       },
     };
 
-    // First poll: solo1 queued as pending
+    // Poll 1: solo1 queued as pending (pollsSeen=0)
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 0);
     assert.equal(watcherState.pendingVideoIds.size, 1);
 
-    // Second poll: pending solo1 processed, detected as live
+    // Poll 2: pending solo1 incremented (pollsSeen=1), still waiting
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
+    assert.equal(watcherState.pendingVideoIds.size, 1);
+
+    // Poll 3: pending solo1 reaches pollsSeen=2, detected as live
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 1);
     const sentContent = mockChannel.send.mock.calls[0].arguments[0].content;
