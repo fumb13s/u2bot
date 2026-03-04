@@ -1,3 +1,4 @@
 node_modules/
 config.json
 watchers.json
+.worktrees/

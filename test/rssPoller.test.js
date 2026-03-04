@@ -143,6 +143,61 @@ describe('isLiveVideo', () => {
     const result = await isLiveVideo('notfound');
     assert.equal(result, false);
   });
+
+  it('detects live stream via is_viewed_live fallback (LOGIN_REQUIRED stub)', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = ' +
+        '{"playabilityStatus":{"status":"LOGIN_REQUIRED"},' +
+        '"trackingParams":[{"key":"is_viewed_live","value":"True"}]}' +
+        ';</script></html>',
+    }));
+
+    const result = await isLiveVideo('login_live');
+    assert.equal(result, true);
+  });
+
+  it('returns false for regular video behind login wall', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = ' +
+        '{"playabilityStatus":{"status":"LOGIN_REQUIRED"},' +
+        '"trackingParams":[{"key":"is_viewed_live","value":"False"}]}' +
+        ';</script></html>',
+    }));
+
+    const result = await isLiveVideo('login_notlive');
+    assert.equal(result, false);
+  });
+
+  it('primary check still takes precedence when available', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = ' +
+        '{"videoDetails":{"isLive":true,"isLiveContent":true},' +
+        '"trackingParams":[{"key":"is_viewed_live","value":"True"}]}' +
+        ';</script></html>',
+    }));
+
+    const result = await isLiveVideo('both_checks');
+    assert.equal(result, true);
+  });
+
+  it('returns false when is_viewed_live is absent entirely', async () => {
+    mock.method(globalThis, 'fetch', async () => ({
+      ok: true,
+      text: async () =>
+        '<html><script>var ytInitialPlayerResponse = ' +
+        '{"playabilityStatus":{"status":"LOGIN_REQUIRED"}}' +
+        ';</script></html>',
+    }));
+
+    const result = await isLiveVideo('login_notracking');
+    assert.equal(result, false);
+  });
 });
 
 describe('fetchFeedEntries', () => {
@@ -386,6 +441,59 @@ describe('pollRssFeedForWatcher', () => {
     assert.equal(watcherState.pendingVideoIds.size, 1);
 
     // Poll 3: pending solo1 reaches pollsSeen=2, detected as live
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 1);
+    const sentContent = mockChannel.send.mock.calls[0].arguments[0].content;
+    assert.ok(sentContent.startsWith('live:'));
+    assert.equal(watcherState.pendingVideoIds.size, 0);
+  });
+
+  it('sends live notification via login-walled is_viewed_live fallback', async () => {
+    mock.method(globalThis, 'fetch', async (url) => {
+      if (url.includes('feeds/videos.xml')) {
+        return {
+          ok: true,
+          text: async () => SINGLE_ENTRY_XML,
+        };
+      }
+      // isLiveVideo check — LOGIN_REQUIRED stub with is_viewed_live fallback
+      return {
+        ok: true,
+        text: async () =>
+          '<html><script>var ytInitialPlayerResponse = ' +
+          '{"playabilityStatus":{"status":"LOGIN_REQUIRED"},' +
+          '"trackingParams":[{"key":"is_viewed_live","value":"True"}]}' +
+          ';</script></html>',
+      };
+    });
+
+    const mockMessage = { crosspost: mock.fn() };
+    const mockChannel = { send: mock.fn(async () => mockMessage) };
+    const client = {
+      channels: { fetch: mock.fn(async () => mockChannel) },
+    };
+    const watcher = { id: 'UC_login_live', discordChannelId: '999', label: 'LoginLive' };
+    const watcherState = makeWatcherState();
+    watcherState.isFirstRun = false;
+    const config = {
+      discord: { autoPublish: false },
+      messages: {
+        video: { content: 'video: {url}' },
+        live: { content: 'live: {url}' },
+      },
+    };
+
+    // Poll 1: solo1 queued as pending (pollsSeen=0)
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
+    assert.equal(watcherState.pendingVideoIds.size, 1);
+
+    // Poll 2: pending solo1 incremented (pollsSeen=1), still waiting
+    await pollRssFeedForWatcher(client, watcher, watcherState, config);
+    assert.equal(mockChannel.send.mock.callCount(), 0);
+    assert.equal(watcherState.pendingVideoIds.size, 1);
+
+    // Poll 3: pending solo1 reaches pollsSeen=2, detected as live via fallback
     await pollRssFeedForWatcher(client, watcher, watcherState, config);
     assert.equal(mockChannel.send.mock.callCount(), 1);
     const sentContent = mockChannel.send.mock.calls[0].arguments[0].content;
