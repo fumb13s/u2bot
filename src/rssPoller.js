@@ -26,10 +26,16 @@ async function isLiveVideo(videoId) {
     const endIdx = rest.search(/;\s*(?:var\s|<\/script)/);
     const section = endIdx > 0 ? rest.substring(0, endIdx) : rest.substring(0, 5000);
 
-    return (
+    // Primary: original check (works when YouTube serves the full player response)
+    if (
       /"isLiveContent"\s*:\s*true/.test(section) &&
       /"isLive"\s*:\s*true/.test(section)
-    );
+    ) {
+      return true;
+    }
+
+    // Fallback: tracking params (works even with LOGIN_REQUIRED stub)
+    return /"is_viewed_live","value":"True"/.test(section);
   } catch (err) {
     console.error(`Live check error for ${videoId}:`, err.message);
     return false;

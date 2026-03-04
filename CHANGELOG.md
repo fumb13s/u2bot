@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+### Fixed
+- Live stream detection failing due to YouTube LOGIN_REQUIRED wall in
+  `ytInitialPlayerResponse` -- added `is_viewed_live` tracking param fallback
+
 ## 1.3.0
 
 ### Added
